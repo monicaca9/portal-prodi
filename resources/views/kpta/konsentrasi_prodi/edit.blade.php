@@ -1,0 +1,1 @@
+{!! FormInputText('nm_konsentrasi_prodi','Nama Konsentrasi Prodi','text', $data->nm_konsentrasi_prodi, ['required'=>true]) !!}
