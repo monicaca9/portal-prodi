@@ -16,6 +16,7 @@
         "doctrine/dbal": "^3.6",
         "econea/nusoap": "^0.9.15",
         "guzzlehttp/guzzle": "^7.7",
+        "iio/libmergepdf": "^3.1",
         "laravel/framework": "^10.10",
         "laravel/sanctum": "^3.2",
         "laravel/tinker": "^2.8",

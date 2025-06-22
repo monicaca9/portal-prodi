@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Illuminate\Support\Facades\Storage;
+use setasign\Fpdi\Fpdi;
+use Carbon\Carbon;
 
 class StillStudyLetterController extends Controller
 {
@@ -53,6 +56,9 @@ class StillStudyLetterController extends Controller
         ->where('id_sms', 'c4b67b31-fd42-4670-bcf0-541ff1c20ff7')
         ->value('nm_lemb');
 
+        $academicYear = $this->getCurrentAcademicYear();
+        $semesterNumber = $this->calculateCurrentSemester($profile->tgl_masuk ?? now());
+
         $data = new StillStudyLetter();
         $data->fill([
             'id'                => Str::uuid(),
@@ -60,8 +66,8 @@ class StillStudyLetterController extends Controller
             'student_number'    => $profile->nim,
             'department'        => $jurusan,       
             'study_program'     => $profile->prodi,
-            'semester'          => '',
-            'academic_year'     => '',
+            'semester'          => $semesterNumber,
+            'academic_year'     => $academicYear,
             'phone_number'      => $profile->tlpn_hp,
             'address'           => $profile->jln,
             'purpose'           => '',
@@ -78,8 +84,10 @@ class StillStudyLetterController extends Controller
         $studentId = $profile->id_pd ?? null;
         
         $academicAdvisors = $this->getAcademicAdvisors($studentId);
-        $academicYears = $this->getAcademicYears();
-        return view('administrasi.surat_masih_kuliah.create', compact('profile', 'data', 'academicAdvisors', 'academicYears'));
+        $semesters = []; 
+        $currentAcademicYear = $this->getCurrentAcademicYear();
+
+        return view('administrasi.surat_masih_kuliah.create', compact('profile', 'data', 'academicAdvisors', 'semesters', 'currentAcademicYear'));
     }
 
     public function store(Request $request)
@@ -102,8 +110,8 @@ class StillStudyLetterController extends Controller
             'parent_address'       => 'required|string',
             'signature'            => 'required|string',
             'academic_advisor'     => 'required|string|max:100',
-            'supporting_document'  => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
-            'supporting_document2' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
+            'supporting_document'  => 'required|file|mimes:pdf|max:2048',
+            'supporting_document2' => 'required|file|mimes:pdf|max:2048',
         ]);
 
         $signaturePath = null;
@@ -123,23 +131,35 @@ class StillStudyLetterController extends Controller
         $signaturePath = 'public/signatures/' . $filename;
     }
 
-    // Simpan supporting document
-    if ($request->hasFile('supporting_document')) {
-        $file = $request->file('supporting_document');
-        $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-        $supportingDocumentPath = $file->storeAs('public/supporting_documents', $filename);
-    }
+    // Simpan dokumen pendukung 1
+$supportingDocumentPath = null;
+if ($request->hasFile('supporting_document')) {
+    $file = $request->file('supporting_document');
+    $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+    $supportingDocumentPath = $file->storeAs('public/supporting_documents', $filename);
+}
 
-    $data = new StillStudyLetter();
-    $data->fill(array_merge(
-        $request->except(['signature', 'supporting_document']),
-        [
-            'id' => Str::uuid(),
-            'signature' => $signaturePath,
-            'supporting_document' => $supportingDocumentPath,
-        ]
-    ));
-    $data->save();
+// Simpan dokumen pendukung 2
+$supportingDocument2Path = null;
+if ($request->hasFile('supporting_document2')) {
+    $file2 = $request->file('supporting_document2');
+    $filename2 = time() . '_' . uniqid() . '.' . $file2->getClientOriginalExtension();
+    $supportingDocument2Path = $file2->storeAs('public/supporting_documents2', $filename2);
+}
+
+// Simpan ke database
+$data = new StillStudyLetter();
+$data->fill(array_merge(
+    $request->except(['signature', 'supporting_document', 'supporting_document2']),
+    [
+        'id' => Str::uuid(),
+        'signature' => $signaturePath,
+        'supporting_document' => $supportingDocumentPath,
+        'supporting_document2' => $supportingDocument2Path,
+    ]
+));
+$data->save();
+
 
         return redirect()->route('administrasi.surat_masih_kuliah')->with('success', 'Data berhasil disimpan!');
     }
@@ -178,8 +198,10 @@ class StillStudyLetterController extends Controller
         $data = $this->getLetterByDecryptedId($id);
         $studentId = $profile->id_pd ?? null;
         $academicAdvisors = $this->getAcademicAdvisors($studentId);
+        $semesters = []; 
+        $currentAcademicYear = $this->getCurrentAcademicYear();
 
-        return view('administrasi.surat_masih_kuliah.edit', compact('data', 'academicAdvisors'));
+        return view('administrasi.surat_masih_kuliah.edit', compact('data', 'academicAdvisors','semesters', 'currentAcademicYear'));
     }
 
     public function update(Request $request, $id)
@@ -204,13 +226,14 @@ class StillStudyLetterController extends Controller
             'parent_address'       => 'required|string',
             'signature'            => 'required|string',
             'academic_advisor'     => 'required|string|max:100',
-            'supporting_document'  => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
-            'supporting_document2' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
+            'supporting_document'  => 'sometimes|file|mimes:pdf|max:2048',
+            'supporting_document2' => 'sometimes|file|mimes:pdf|max:2048',
         ]);
 
 
         $signaturePath = $data->signature;
         $supportingDocumentPath = $data->supporting_document;
+        $supportingDocument2Path = $data->supporting_document2;
 
         // Jika signature baru dikirim (base64)
     if ($request->signature && Str::startsWith($request->signature, 'data:image')) {
@@ -243,12 +266,24 @@ class StillStudyLetterController extends Controller
         $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
         $supportingDocumentPath = $file->storeAs('public/supporting_documents', $filename);
     }
+    
+    if ($request->hasFile('supporting_document2')) {
+        // Hapus file lama jika ada (optional)
+        if ($supportingDocument2Path && \Storage::exists($supportingDocument2Path)) {
+            \Storage::delete($supportingDocument2Path);
+        }
+
+        $file = $request->file('supporting_document2');
+        $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+        $supportingDocument2Path = $file->storeAs('public/supporting_documents2', $filename);
+    }
 
     $data->fill(array_merge(
-        $request->except(['signature', 'supporting_document']),
+        $request->except(['signature', 'supporting_document', 'supporting_document2']),
         [
             'signature' => $signaturePath,
             'supporting_document' => $supportingDocumentPath,
+            'supporting_document2' => $supportingDocument2Path,
         ]
     ));
     $data->save();
@@ -256,21 +291,48 @@ class StillStudyLetterController extends Controller
         return redirect()->route('administrasi.surat_masih_kuliah', ['id' => $id])->with('success', 'Data berhasil diperbarui.');
     }
 
-
-
     public function previewPDF($id)
     {
         $data = $this->getLetterByDecryptedId($id);
         $this->attachAcademicAdvisorInfo($data);
-        return $this->generatePDF($data)->stream('surat_masih_kuliah.pdf');
+
+        // 1. Generate surat aktif kuliah PDF (sementara simpan ke file)
+        $generatedPDF = $this->generatePDF($data);
+        $tempPath = storage_path('app/temp_surat.pdf');
+        $generatedPDF->save($tempPath);
+
+        // 2. Ambil dokumen pendukung 1
+        $supportingFile1 = $data->supporting_document;
+        $relativePath1 = str_replace('public/', '', $supportingFile1);
+        $supportingPath1 = storage_path('app/public/' . $relativePath1);
+
+        // 3. Ambil dokumen pendukung 2
+        $supportingFile2 = $data->supporting_document2;
+        $relativePath2 = str_replace('public/', '', $supportingFile2);
+        $supportingPath2 = storage_path('app/public/' . $relativePath2);
+
+        // 4. Cek keberadaan file
+        if (!file_exists($supportingPath1)) {
+            return response()->json(['message' => 'File dokumen pendukung 1 tidak ditemukan.'], 404);
+        }
+
+        if (!file_exists($supportingPath2)) {
+            return response()->json(['message' => 'File dokumen pendukung 2 tidak ditemukan.'], 404);
+        }
+
+        // 5. Gabungkan semua
+        $mergedPath = storage_path('app/merged_surat.pdf');
+        $this->mergePDFs([$tempPath, $supportingPath1, $supportingPath2], $mergedPath);
+
+        // 6. Return hasil gabungan
+        return response()->stream(function () use ($mergedPath) {
+            echo file_get_contents($mergedPath);
+        }, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="surat_masih_kuliah.pdf"',
+        ]);
     }
 
-    // public function downloadPDF($id)
-    // {
-    //     $data = $this->getLetterByDecryptedId($id);
-    //     $this->attachAcademicAdvisorInfo($data);
-    //     return $this->generatePDF($data)->download('surat_masih_kuliah.pdf');
-    // }
 
     private function getLetterByDecryptedId($id)
     {
@@ -318,11 +380,43 @@ class StillStudyLetterController extends Controller
     return $dosenPA;
 }
 
-    private function getAcademicYears()
+        public function getCurrentAcademicYear()
     {
-        return DB::table('ref.tahun_ajaran')->pluck('nm_thn_ajaran')->toArray();
+        $today = Carbon::today();
+
+        $year = DB::table('ref.semester')
+            ->whereDate('tgl_mulai', '<=', $today)
+            ->whereDate('tgl_selesai', '>=', $today)
+            ->orderByDesc('id_smt')
+            ->first();
+
+        if (!$year) {
+            return 'Tahun Akademik Tidak Ditemukan';
+        }
+
+        // Ambil nama tahun akademik dari tabel tahun_ajaran
+        $academicYear = DB::table('ref.tahun_ajaran')
+            ->where('id_thn_ajaran', $year->id_thn_ajaran)
+            ->value('nm_thn_ajaran');
+
+        return $academicYear ?: 'Tahun Akademik Tidak Ditemukan';
     }
-    
+
+
+    private function calculateCurrentSemester($entryDate)
+    {
+        // Konversi tgl masuk ke Carbon
+        $entry = Carbon::parse($entryDate);
+        $now = Carbon::now();
+
+        // Hitung jumlah bulan antara sekarang dan tanggal masuk
+        $diffInMonths = $entry->diffInMonths($now);
+
+        // Setiap semester 6 bulan
+        $semesterNumber = (int) floor($diffInMonths / 6) + 1;
+
+        return $semesterNumber;
+    }
 
 
     private function generatePDF($data)
@@ -367,5 +461,27 @@ class StillStudyLetterController extends Controller
             'chroot' => [public_path()],
         ])
         ->setWarnings(false);
+    }
+
+        private function mergePDFs(array $pdfPaths, $outputPath = null)
+    {
+        $pdf = new Fpdi();
+
+        foreach ($pdfPaths as $file) {
+            $pageCount = $pdf->setSourceFile($file);
+            for ($page = 1; $page <= $pageCount; $page++) {
+                $tpl = $pdf->importPage($page);
+                $size = $pdf->getTemplateSize($tpl);
+
+                $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                $pdf->useTemplate($tpl);
+            }
+        }
+
+        if ($outputPath) {
+            $pdf->Output('F', $outputPath); // Simpan ke file
+        } else {
+            $pdf->Output('I', 'combined.pdf'); // Langsung tampilkan
+        }
     }
 }

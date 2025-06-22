@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Support\Facades\Storage;
+use setasign\Fpdi\Fpdi;
+use Carbon\Carbon;
 
 class StudentActiveLetterController extends Controller
 {
@@ -49,10 +51,13 @@ class StudentActiveLetterController extends Controller
     public function create(PesertaDidik $pesertaDidik)
     {
         $profile = $pesertaDidik->detailPD(auth()->user()->detailPD);
-
+        
         $jurusan = DB::table('pdrd.sms')
         ->where('id_sms', 'c4b67b31-fd42-4670-bcf0-541ff1c20ff7')
         ->value('nm_lemb');
+
+        $academicYear = $this->getCurrentAcademicYear();
+        $semesterNumber = $this->calculateCurrentSemester($profile->tgl_masuk ?? now());
 
         $data = new StudentActiveLetter();
         $data->fill([
@@ -61,8 +66,8 @@ class StudentActiveLetterController extends Controller
             'student_number'    => $profile->nim,
             'department'        => $jurusan,       
             'study_program'     => $profile->prodi,
-            'semester'          => '',
-            'academic_year'     => '',
+            'semester'          => $semesterNumber,
+            'academic_year'     => $academicYear,
             'phone_number'      => $profile->tlpn_hp,
             'address'           => $profile->jln,
             'purpose'           => '',
@@ -71,10 +76,12 @@ class StudentActiveLetterController extends Controller
         ]);
 
         $studentId = $profile->id_pd ?? null;
-
         $academicAdvisors = $this->getAcademicAdvisors($studentId);
-        $academicYears = $this->getAcademicYears();
-        return view('administrasi.surat_aktif_kuliah.create', compact('profile', 'data', 'academicAdvisors', 'academicYears'));
+        $semesters = []; 
+        $currentAcademicYear = $this->getCurrentAcademicYear();
+
+
+        return view('administrasi.surat_aktif_kuliah.create', compact('profile', 'data', 'academicAdvisors', 'semesters', 'currentAcademicYear'));
     }
 
     public function store(Request $request)
@@ -91,7 +98,7 @@ class StudentActiveLetterController extends Controller
             'purpose'              => 'required|string|max:255',
             'signature'            => 'required|string',
             'academic_advisor'     => 'required|string|max:100',
-            'supporting_document'  => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
+            'supporting_document'  => 'required|file|mimes:pdf|max:2048',
         ]);
 
         $signaturePath = null;
@@ -166,8 +173,10 @@ class StudentActiveLetterController extends Controller
         $data = $this->getLetterByDecryptedId($id);
         $studentId = $profile->id_pd ?? null;
         $academicAdvisors = $this->getAcademicAdvisors($studentId);
+        $semesters = []; 
+        $currentAcademicYear = $this->getCurrentAcademicYear();
 
-        return view('administrasi.surat_aktif_kuliah.edit', compact('data', 'academicAdvisors'));
+        return view('administrasi.surat_aktif_kuliah.edit', compact('data', 'academicAdvisors', 'semesters', 'currentAcademicYear'));
     }
 
     public function update(Request $request, $id)
@@ -184,12 +193,12 @@ class StudentActiveLetterController extends Controller
         'phone_number'         => 'required|max:15',
         'address'              => 'required|string',
         'purpose'              => 'required|string|max:255',
-        'signature'            => 'required|string',  // base64 string, bukan file upload
+        'signature'            => 'required|string',  
         'academic_advisor'     => 'required|string|max:100',
-        'supporting_document'  => 'sometimes|file|mimes:jpeg,png,jpg,pdf|max:2048',  // boleh ganti dokumen pendukung
+        'supporting_document'  => 'sometimes|file|mimes:pdf|max:2048',  
     ]);
 
-    $signaturePath = $data->signature; // default pakai yg lama
+    $signaturePath = $data->signature; 
     $supportingDocumentPath = $data->supporting_document;
 
     // Jika signature baru dikirim (base64)
@@ -236,13 +245,36 @@ class StudentActiveLetterController extends Controller
     return redirect()->route('administrasi.surat_aktif_kuliah', ['id' => $id])->with('success', 'Data berhasil diperbarui.');
 }
 
-    public function previewPDF($id)
+        public function previewPDF($id)
     {
         $data = $this->getLetterByDecryptedId($id);
         $this->attachAcademicAdvisorInfo($data);
-        return $this->generatePDF($data)->stream('surat_aktif_kuliah.pdf');
-    }
 
+        // 1. Generate surat aktif kuliah PDF (sementara simpan ke file)
+        $generatedPDF = $this->generatePDF($data);
+        $tempPath = storage_path('app/temp_surat.pdf');
+        $generatedPDF->save($tempPath);
+
+        $supportingFile = $data->supporting_document;
+        $relativePath = str_replace('public/', '', $supportingFile);
+        $supportingPath = storage_path('app/public/' . $relativePath);
+
+
+        if (!file_exists($supportingPath)) {
+            return response()->json(['message' => 'File dokumen pendukung tidak ditemukan.'], 404);
+        }
+
+        // 3. Gabungkan
+        $mergedPath = storage_path('app/merged_surat.pdf');
+        $this->mergePDFs([$tempPath, $supportingPath], $mergedPath);
+
+        return response()->stream(function () use ($mergedPath) {
+            echo file_get_contents($mergedPath);
+        }, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="surat_aktif_kuliah.pdf"',
+        ]);
+    }
 
     private function getLetterByDecryptedId($id)
     {
@@ -273,28 +305,63 @@ class StudentActiveLetterController extends Controller
         }
     }
 
-    private function getAcademicAdvisors($studentId)
-{
-    // Ambil prodi mahasiswa dari reg_pd
-    $prodiMahasiswa = DB::table('pdrd.reg_pd')
-        ->where('id_pd', $studentId)
-        ->value('id_sms');  // ambil id_sms prodi mahasiswa
-
-    // Ambil dosen PA dari prodi yang sama dan aktif (home base)
-    $dosenPA = DB::table('pdrd.sdm as s')
-    ->join('pdrd.reg_ptk as r', 's.id_sdm', '=', 'r.id_sdm')
-    ->join('pdrd.keaktifan_ptk as k', 'r.id_reg_ptk', '=', 'k.id_reg_ptk')
-    ->where('r.id_sms', $prodiMahasiswa)
-    ->where('k.a_sp_homebase', 1)       
-    ->pluck('s.nm_sdm', 's.id_sdm');
-
-    return $dosenPA;
-}
-
-    private function getAcademicYears()
+        private function getAcademicAdvisors($studentId)
     {
-        return DB::table('ref.tahun_ajaran')->pluck('nm_thn_ajaran')->toArray();
+        // Ambil prodi mahasiswa dari reg_pd
+        $prodiMahasiswa = DB::table('pdrd.reg_pd')
+            ->where('id_pd', $studentId)
+            ->value('id_sms');  // ambil id_sms prodi mahasiswa
+
+        // Ambil dosen PA dari prodi yang sama dan aktif (home base)
+        $dosenPA = DB::table('pdrd.sdm as s')
+        ->join('pdrd.reg_ptk as r', 's.id_sdm', '=', 'r.id_sdm')
+        ->join('pdrd.keaktifan_ptk as k', 'r.id_reg_ptk', '=', 'k.id_reg_ptk')
+        ->where('r.id_sms', $prodiMahasiswa)
+        ->where('k.a_sp_homebase', 1)       
+        ->pluck('s.nm_sdm', 's.id_sdm');
+
+        return $dosenPA;
     }
+
+        public function getCurrentAcademicYear()
+    {
+        $today = Carbon::today();
+
+        $year = DB::table('ref.semester')
+            ->whereDate('tgl_mulai', '<=', $today)
+            ->whereDate('tgl_selesai', '>=', $today)
+            ->orderByDesc('id_smt')
+            ->first();
+
+        if (!$year) {
+            return 'Tahun Akademik Tidak Ditemukan';
+        }
+
+        // Ambil nama tahun akademik dari tabel tahun_ajaran
+        $academicYear = DB::table('ref.tahun_ajaran')
+            ->where('id_thn_ajaran', $year->id_thn_ajaran)
+            ->value('nm_thn_ajaran');
+
+        return $academicYear ?: 'Tahun Akademik Tidak Ditemukan';
+    }
+
+
+    private function calculateCurrentSemester($entryDate)
+    {
+        // Konversi tgl masuk ke Carbon
+        $entry = Carbon::parse($entryDate);
+        $now = Carbon::now();
+
+        // Hitung jumlah bulan antara sekarang dan tanggal masuk
+        $diffInMonths = $entry->diffInMonths($now);
+
+        // Setiap semester 6 bulan
+        $semesterNumber = (int) floor($diffInMonths / 6) + 1;
+
+        return $semesterNumber;
+    }
+
+
 
     private function generatePDF($data)
     {
@@ -338,5 +405,27 @@ class StudentActiveLetterController extends Controller
             'chroot' => [public_path()],
         ])
         ->setWarnings(false);
+    }
+
+        private function mergePDFs(array $pdfPaths, $outputPath = null)
+    {
+        $pdf = new Fpdi();
+
+        foreach ($pdfPaths as $file) {
+            $pageCount = $pdf->setSourceFile($file);
+            for ($page = 1; $page <= $pageCount; $page++) {
+                $tpl = $pdf->importPage($page);
+                $size = $pdf->getTemplateSize($tpl);
+
+                $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                $pdf->useTemplate($tpl);
+            }
+        }
+
+        if ($outputPath) {
+            $pdf->Output('F', $outputPath); // Simpan ke file
+        } else {
+            $pdf->Output('I', 'combined.pdf'); // Langsung tampilkan
+        }
     }
 }

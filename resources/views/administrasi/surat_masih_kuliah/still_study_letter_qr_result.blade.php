@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8" />
-    <title>SURAT KETERANGAN AKTIF KULIAH</title>
+    <title>SURAT KETERANGAN MASIH KULIAH</title>
     <style>
         body {
             font-family: 'Times New Roman', serif;
@@ -57,22 +57,18 @@
         <div class="content">
             <div class="text-center">
                 <img src="{{ asset('images/logo-unila.png') }}" alt="Logo Universitas" class="logo">
-                <p style="margin: 20px 0; font-weight: bold;">SURAT KETERANGAN AKTIF KULIAH</p>
+                <p style="margin: 20px 0; font-weight: bold;">SURAT KETERANGAN MASIH KULIAH</p>
             </div>
 
             <table style="margin-top: 20px; text-align: left;">
                 <tr>
                     <td>Nomor Surat</td>
-                    <td><span class="label">:</span> {{ $data->letterNumber->number ?? '' }}/{{ $data->letterNumber->code ?? '' }}/{{ $data->letterNumber->year ?? '' }}</td>
+                    <td><span class="label">:</span> {{ $data->numberLetter->number ?? '' }}/{{ $data->numberLetter->code ?? '' }}/{{ $data->numberLetter->year ?? '' }}</td>
                 </tr>
                 <tr>
                     <td>Perihal Surat</td>
-                    <td><span class="label">:</span> Surat Keterangan Aktif Kuliah</td>
+                    <td><span class="label">:</span> Surat Keterangan Masih Kuliah</td>
                 </tr>
-                {{-- <tr>
-                    <td>Tanggal Surat</td>
-                    <td><span class="label">:</span> {{ \Carbon\Carbon::parse($data->created_at)->translatedFormat('d F Y') }}</td>
-                </tr> --}}
                 <tr><td colspan="2"></td></tr>
                 <tr><td colspan="2">Yang Mengajukan</td></tr>
                 <tr>

@@ -15,6 +15,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Exports\StillStudyLetterExport;
 use Maatwebsite\Excel\Facades\Excel;
+use setasign\Fpdi\Fpdi;
 
 class StillStudyLetterController extends Controller
 {
@@ -129,7 +130,11 @@ class StillStudyLetterController extends Controller
             ->orderBy('number', 'desc')
             ->value('number') + 1 ?? 1;
 
-        return view('validasi.surat_masih_kuliah.edit', compact('data', 'code', 'year', 'nextNumber'));
+        $stillStudyLetters = StillStudyLetter::where('student_number', $data->student_number)
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+        return view('validasi.surat_masih_kuliah.edit', compact('data', 'code', 'year', 'nextNumber', 'stillStudyLetters'));
     }
 
 
@@ -149,7 +154,7 @@ class StillStudyLetterController extends Controller
 
         $rules = [
             'status' => 'required|in:disetujui,ditolak',
-            'notes' => 'nullable|string',
+            'notes' => 'required_if:status,ditolak',
         ];
         $request->validate($rules);
 
@@ -250,7 +255,42 @@ class StillStudyLetterController extends Controller
     {
         $data = $this->getLetterByDecryptedId($id);
         $this->attachAcademicAdvisorInfo($data);
-        return $this->generatePDF($data)->stream('surat_masih_kuliah.pdf');
+
+        // 1. Generate surat aktif kuliah PDF (sementara simpan ke file)
+        $generatedPDF = $this->generatePDF($data);
+        $tempPath = storage_path('app/temp_surat.pdf');
+        $generatedPDF->save($tempPath);
+
+        // 2. Ambil dokumen pendukung 1
+        $supportingFile1 = $data->supporting_document;
+        $relativePath1 = str_replace('public/', '', $supportingFile1);
+        $supportingPath1 = storage_path('app/public/' . $relativePath1);
+
+        // 3. Ambil dokumen pendukung 2
+        $supportingFile2 = $data->supporting_document2;
+        $relativePath2 = str_replace('public/', '', $supportingFile2);
+        $supportingPath2 = storage_path('app/public/' . $relativePath2);
+
+        // 4. Cek keberadaan file
+        if (!file_exists($supportingPath1)) {
+            return response()->json(['message' => 'File dokumen pendukung 1 tidak ditemukan.'], 404);
+        }
+
+        if (!file_exists($supportingPath2)) {
+            return response()->json(['message' => 'File dokumen pendukung 2 tidak ditemukan.'], 404);
+        }
+
+        // 5. Gabungkan semua
+        $mergedPath = storage_path('app/merged_surat.pdf');
+        $this->mergePDFs([$tempPath, $supportingPath1, $supportingPath2], $mergedPath);
+
+        // 6. Return hasil gabungan
+        return response()->stream(function () use ($mergedPath) {
+            echo file_get_contents($mergedPath);
+        }, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="surat_masih_kuliah.pdf"',
+        ]);
     }
 
     public function downloadPDF($id)
@@ -330,5 +370,27 @@ class StillStudyLetterController extends Controller
                 'chroot' => [public_path()],
             ])
             ->setWarnings(false);
+    }
+
+        private function mergePDFs(array $pdfPaths, $outputPath = null)
+    {
+        $pdf = new Fpdi();
+
+        foreach ($pdfPaths as $file) {
+            $pageCount = $pdf->setSourceFile($file);
+            for ($page = 1; $page <= $pageCount; $page++) {
+                $tpl = $pdf->importPage($page);
+                $size = $pdf->getTemplateSize($tpl);
+
+                $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                $pdf->useTemplate($tpl);
+            }
+        }
+
+        if ($outputPath) {
+            $pdf->Output('F', $outputPath); // Simpan ke file
+        } else {
+            $pdf->Output('I', 'combined.pdf'); // Langsung tampilkan
+        }
     }
 }

@@ -3,32 +3,72 @@
 
 @section('content')
     <div class="card">
-        <form action="{{ route('administrasi.surat_masih_kuliah.tambah') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('administrasi.surat_masih_kuliah.add') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-history"></i> Ajukan Administrasi -
                     {{ $profile->nm_pd . ' (' . $profile->nim . ')' }}</h3>
             </div>
             <div class="card-body">
-                {!! FormInputText('name', 'Nama Lengkap', 'text', $data->name, ['required' => true, 'readonly' => true]) !!}
-                {!! FormInputText('student_number', 'NPM', 'number', $data->student_number, ['required' => true, 'readonly' => true]) !!}
-                {!! FormInputText('department', 'Jurusan', 'text', $data->department, ['required' => true, 'readonly' => true]) !!}
-                {!! FormInputText('study_program', 'Program Studi', 'text', $data->study_program, ['required' => true, 'readonly' => true]) !!}
-                {!! FormInputSelect(
-                    'academic_year',
-                    'Pilih Tahun Akademik',
-                    true,
-                    true,
-                    $academicYears,
-                    $data->academic_year,
-                ) !!}
-                {!! FormInputText('semester', 'Semester', 'number', $data->semester, ['required' => true]) !!}
+                {!! FormInputText('name', 'Nama Lengkap', 'text', $data->name, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
+                {!! FormInputText('student_number', 'NPM', 'number', $data->student_number, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
+                {!! FormInputText('department', 'Jurusan', 'text', $data->department, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
+                {!! FormInputText('study_program', 'Program Studi', 'text', $data->study_program, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
+                {!! FormInputText('academic_year', 'Tahun Akademik', 'text', $currentAcademicYear, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
+                {!! FormInputText('semester', 'Semester', 'text', $data->semester, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
+                
                 {!! FormInputText('phone_number', 'Nomor Whatsapp', 'number', $data->phone_number, ['required' => true]) !!}
                 {!! FormInputText('address', 'Alamat', 'text', $data->address, ['required' => true]) !!}
                 {!! FormInputText('purpose', 'Keperluan', 'text', $data->purpose, ['required' => true]) !!}
                 {!! FormInputText('parent_name', 'Nama Wali', 'text', $data->parent_name, ['required' => true]) !!}
-                {!! FormInputText('parent_nip', 'NIP', 'text', $data->parent_nip, ['required' => true]) !!}
-                {!! FormInputText('parent_grade', 'Pangkat/Gol.', 'text', $data->parent_grade, ['required' => true]) !!}
+                <div class="form-group row">
+    <label for="parent_grade" class="col-sm-2 col-form-label">
+        NIP <span style="color:red;">*</span><br>
+        <span style="font-size: 0.8em; color: #888;">
+            <em>(Isi - jika tidak ada)</em>
+        </span>
+    </label>
+    <div class="col-sm-10">
+        <input 
+            type="text" 
+            name="parent_nip" 
+            id="parent_nip" 
+            class="form-control{{ $errors->has('parent_nip') ? ' is-invalid' : '' }}" 
+            value="{{ old('parent_nip', $data->parent_nip) }}" 
+            placeholder="NIP" 
+            required>
+        @if ($errors->has('parent_nip'))
+            <div class="invalid-feedback">
+                {{ $errors->first('parent_nip') }}
+            </div>
+        @endif
+    </div>
+</div>
+
+
+                <div class="form-group row">
+    <label for="parent_grade" class="col-sm-2 col-form-label">
+        Pangkat/Gol. <span style="color:red;">*</span><br>
+        <span style="font-size: 0.8em; color: #888;">
+            <em>(Isi - jika tidak ada)</em>
+        </span>
+    </label>
+    <div class="col-sm-10">
+        <input 
+            type="text" 
+            name="parent_grade" 
+            id="parent_grade" 
+            class="form-control{{ $errors->has('parent_grade') ? ' is-invalid' : '' }}" 
+            value="{{ old('parent_grade', $data->parent_grade) }}" 
+            placeholder="Pangkat/Gol." 
+            required>
+        @if ($errors->has('parent_grade'))
+            <div class="invalid-feedback">
+                {{ $errors->first('parent_grade') }}
+            </div>
+        @endif
+    </div>
+</div>
                 {!! FormInputText('parent_job', 'Pekerjaan', 'text', $data->parent_job, ['required' => true]) !!}
                 {!! FormInputText('parent_institution', 'Instansi/Tempat Kerja', 'text', $data->parent_institution, ['required' => true]) !!}
                 {!! FormInputText('parent_address', 'Alamat Wali', 'text', $data->parent_address, ['required' => true]) !!}
@@ -99,13 +139,13 @@
                 <div class="form-group row">
                     <label for="supporting_document" class="col-sm-2 col-form-label">
                     Slip UKT Terakhir <span style="color:red;">*</span><br>
-                    <span style="font-size: 0.8em; color: #555;">
+                    <span style="font-size: 0.8em; color: #888;">
                     <em>(Silakan unggah file dengan format .pdf)</em>
                     </span>
                      </label>
                     <div class="col-sm-10">
                         <input type="file" name="supporting_document" id="supporting_document" class="form-control"
-                            accept="image/png, image/jpeg, application/pdf" required>
+                            accept="application/pdf" required>
                         @if ($errors->has('supporting_document'))
                             <div class="invalid-feedback">
                                 {{ $errors->first('supporting_document') }}
@@ -116,13 +156,13 @@
                 <div class="form-group row">
                     <label for="supporting_document2" class="col-sm-2 col-form-label">
                         KP4 Orang Tua (PNS aktif) atau<br>SK Pensiun (pensiun PNS) atau<br>Surat Keterangan Kerja Orang Tua (Swasta) <span style="color:red;">*</span><br>
-                    <span style="font-size: 0.8em; color: #555;">
+                    <span style="font-size: 0.8em; color: #888;">
                     <em>(Silakan unggah file dengan format .pdf)</em>
                     </span>
                      </label>
                     <div class="col-sm-10">
                         <input type="file" name="supporting_document2" id="supporting_document2" class="form-control"
-                            accept="image/png, image/jpeg, application/pdf" required>
+                            accept="application/pdf" required>
                         @if ($errors->has('supporting_document2'))
                             <div class="invalid-feedback">
                                 {{ $errors->first('supporting_document2') }}
@@ -149,4 +189,31 @@
             </div>
         </form>
     </div>
+
+        {{-- Supaya readonly gabisa di klik --}}
+    @push('css')
+<style>
+    input.no-click {
+        pointer-events: none !important;
+        user-select: none !important;
+        background-color: #e9ecef !important; /* Abu-abu terang */
+        border-color: #ced4da !important;
+        color: #495057 !important;
+        cursor: default !important;
+        box-shadow: none !important;
+    }
+
+    input.no-click:focus {
+        outline: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Hilangkan panah angka di input number */
+    input.no-click[type="number"]::-webkit-inner-spin-button,
+    input.no-click[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+</style>
+@endpush
 @endsection

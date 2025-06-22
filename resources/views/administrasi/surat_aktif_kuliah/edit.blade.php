@@ -11,12 +11,13 @@
                 <h3 class="card-title"><i class="fas fa-history"></i> Ubah Data Administrasi - {{ $data->name }}</h3>
             </div>
             <div class="card-body">
-                {!! FormInputText('name', 'Nama Lengkap', 'text', $data->name, ['required' => true, 'readonly' => true]) !!}
-                {!! FormInputText('student_number', 'NPM', 'number', $data->student_number, ['required' => true, 'readonly' => true]) !!}
-                {!! FormInputText('department', 'Jurusan', 'text', $data->department, ['required' => true, 'readonly' => true]) !!}
-                {!! FormInputText('study_program', 'Program Studi', 'text', $data->study_program, ['required' => true, 'readonly' => true]) !!}
-                {!! FormInputText('semester', 'Semester', 'number', $data->semester, ['required' => true]) !!}
-                {!! FormInputText('academic_year', 'Tahun Akademik', 'text', $data->academic_year, ['required' => true]) !!}
+                {!! FormInputText('name', 'Nama Lengkap', 'text', $data->name, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
+                {!! FormInputText('student_number', 'NPM', 'number', $data->student_number, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
+                {!! FormInputText('department', 'Jurusan', 'text', $data->department, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
+                {!! FormInputText('study_program', 'Program Studi', 'text', $data->study_program, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
+                {!! FormInputText('academic_year', 'Tahun Akademik', 'text', $currentAcademicYear, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
+                {!! FormInputText('semester', 'Semester', 'text', $data->semester, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
+
                 {!! FormInputText('phone_number', 'Nomor Whatsapp', 'number', $data->phone_number, ['required' => true]) !!}
                 {!! FormInputText('address', 'Alamat', 'text', $data->address, ['required' => true]) !!}
                 {!! FormInputText('purpose', 'Keperluan', 'text', $data->purpose, ['required' => true]) !!}
@@ -97,14 +98,30 @@
         </script>
 
 
-                <div class="mb-3 d-flex align-items-center">
-                    <label for="supporting_document" style="width: 150px; margin-bottom: 0;">Slip UKT Terakhir</label>
-                    <img id="supportingDocumentPreview" src="{{ $data->supporting_document ? Storage::url($data->supporting_document) : '' }}"
-                        alt="Dokumen Pendukung" style="max-height: 150px; cursor: pointer; margin-right: 15px;"
-                        onclick="document.getElementById('supporting_document').click()" />
-                    <input type="file" name="supporting_document" id="supporting_document" accept="image/png, image/jpeg"
-                        style="display:none" onchange="previewImage(event, 'supportingDocumentPreview')">
-                </div>
+    <div class="mb-3">
+    <label for="supporting_document" class="form-label" style="width: 150px;">Slip UKT Terakhir</label>
+    
+    <div class="d-flex align-items-center">
+        {{-- Tampilkan nama file kalau sudah ada --}}
+        @if ($data->supporting_document)
+            <span id="file-name" style="margin-right: 15px;">
+                {{ basename($data->supporting_document) }}
+            </span>
+        @else
+            <span id="file-name" style="margin-right: 15px;">Belum ada file</span>
+        @endif
+
+        {{-- Tombol untuk upload ulang --}}
+        <button type="button" class="btn btn-secondary btn-sm mt-2" onclick="document.getElementById('supporting_document').click()">
+            Pilih File
+        </button>
+    </div>
+
+    {{-- Input file disembunyikan --}}
+    <input type="file" name="supporting_document" id="supporting_document" accept="application/pdf" style="display: none;"
+        onchange="updateFileName(event)">
+</div>
+
 
                 {!! FormInputSelect(
                     'academic_advisor',
@@ -138,6 +155,43 @@
                     reader.readAsDataURL(input.files[0]);
                 }
             }
+
+        function updateFileName(event) {
+        const fileInput = event.target;
+        const fileNameSpan = document.getElementById('file-name');
+        if (fileInput.files.length > 0) {
+            fileNameSpan.textContent = fileInput.files[0].name;
+        } else {
+            fileNameSpan.textContent = "Belum ada file";
+        }
+    }
         </script>
     @endpush
+
+        {{-- Supaya readonly gabisa di klik --}}
+    @push('css')
+<style>
+    input.no-click {
+        pointer-events: none !important;
+        user-select: none !important;
+        background-color: #e9ecef !important; /* Abu-abu terang */
+        border-color: #ced4da !important;
+        color: #495057 !important;
+        cursor: default !important;
+        box-shadow: none !important;
+    }
+
+    input.no-click:focus {
+        outline: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Hilangkan panah angka di input number */
+    input.no-click[type="number"]::-webkit-inner-spin-button,
+    input.no-click[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+</style>
+@endpush
 @endsection

@@ -15,6 +15,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Exports\StudentActiveLetterExport;
 use Maatwebsite\Excel\Facades\Excel;
+use setasign\Fpdi\Fpdi;
 
 class StudentActiveLetterController extends Controller
 {
@@ -134,7 +135,11 @@ class StudentActiveLetterController extends Controller
             ->orderBy('number', 'desc')
             ->value('number') + 1 ?? 1;
 
-        return view('validasi.surat_aktif_kuliah.edit', compact('data', 'code', 'year', 'nextNumber'));
+        $studentActiveLetters = StudentActiveLetter::where('student_number', $data->student_number)
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+        return view('validasi.surat_aktif_kuliah.edit', compact('data', 'code', 'year', 'nextNumber', 'studentActiveLetters'));
     }
 
 
@@ -154,7 +159,7 @@ class StudentActiveLetterController extends Controller
 
         $rules = [
             'status' => 'required|in:disetujui,ditolak',
-            'notes' => 'nullable|string',
+            'notes' => 'required_if:status,ditolak',
         ];
         $request->validate($rules);
 
@@ -254,7 +259,31 @@ class StudentActiveLetterController extends Controller
     {
         $data = $this->getLetterByDecryptedId($id);
         $this->attachAcademicAdvisorInfo($data);
-        return $this->generatePDF($data)->stream('surat_aktif_kuliah.pdf');
+
+        // 1. Generate surat aktif kuliah PDF (sementara simpan ke file)
+        $generatedPDF = $this->generatePDF($data);
+        $tempPath = storage_path('app/temp_surat.pdf');
+        $generatedPDF->save($tempPath);
+
+        $supportingFile = $data->supporting_document;
+        $relativePath = str_replace('public/', '', $supportingFile);
+        $supportingPath = storage_path('app/public/' . $relativePath);
+
+
+        if (!file_exists($supportingPath)) {
+            return response()->json(['message' => 'File dokumen pendukung tidak ditemukan.'], 404);
+        }
+
+        // 3. Gabungkan
+        $mergedPath = storage_path('app/merged_surat.pdf');
+        $this->mergePDFs([$tempPath, $supportingPath], $mergedPath);
+
+        return response()->stream(function () use ($mergedPath) {
+            echo file_get_contents($mergedPath);
+        }, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="surat_aktif_kuliah.pdf"',
+        ]);
     }
 
     public function downloadPDF($id)
@@ -334,5 +363,27 @@ class StudentActiveLetterController extends Controller
                 'chroot' => [public_path()],
             ])
             ->setWarnings(false);
+    }
+
+        private function mergePDFs(array $pdfPaths, $outputPath = null)
+    {
+        $pdf = new Fpdi();
+
+        foreach ($pdfPaths as $file) {
+            $pageCount = $pdf->setSourceFile($file);
+            for ($page = 1; $page <= $pageCount; $page++) {
+                $tpl = $pdf->importPage($page);
+                $size = $pdf->getTemplateSize($tpl);
+
+                $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                $pdf->useTemplate($tpl);
+            }
+        }
+
+        if ($outputPath) {
+            $pdf->Output('F', $outputPath); // Simpan ke file
+        } else {
+            $pdf->Output('I', 'combined.pdf'); // Langsung tampilkan
+        }
     }
 }

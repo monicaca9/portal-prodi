@@ -35,46 +35,113 @@
                 <h3 class="card-title"><i class="fas fa-paper-plane"></i> VALIDASI PENGAJUAN </h3>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover table-bordered table-sm">
-                        <thead>
-                            <tr>
-                                <th class="text-center">Nama</th>
-                                <th class="text-center">Dokumen Pendukung</th>
-                                <th class="text-center">Komentar</th>
-                                <th class="text-center">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>{{ $data->name }} ({{ $data->student_number }})</td>
-                                <td>
-                                    1. Surat Keterangan Masih Kuliah<br>
-                                    2. Surat Permohonan Pengantar Masih Kuliah<br>
-                                    3. Surat Permohonan Pembuatan Surat Keterangan Masih Kuliah<br>
-                                    4. Slip UKT Terakhir<br>
-                                    5. Fotokopi KP4 Orang Tua (bagi PNS aktif) / <br> 
-                                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Fotokopi SK Pensiun (bagi pensiun PNS) / <br>
-                                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Fotokopi Surat keterangan Kerja Orang Tua (bagi Swasta)
-                                </td>
+                <div class="card-body">
+                <div class="mb-4">
+    <h5><i class="fas fa-user-graduate mb-3"></i> Detail Mahasiswa</h5>
+    <table class="table table-bordered table-sm">
+        <tbody>
+            <tr>
+                <th style="width: 30%;">Nama Lengkap</th>
+                <td>{{ $data->name }}</td>
+            </tr>
+            <tr>
+                <th>NPM</th>
+                <td>{{ $data->student_number }}</td>
+            </tr>
+            <tr>
+                <th>Jurusan</th>
+                <td>{{ $data->department }}</td>
+            </tr>
+            <tr>
+                <th>Program Studi</th>
+                <td>{{ $data->study_program }}</td>
+            </tr>
+            <tr>
+                <th>Tahun Akademik</th>
+                <td>{{ $data->academic_year }}</td>
+            </tr>
+            <tr>
+                <th>Semester</th>
+                <td>{{ $data->semester }}</td>
+            </tr>
+            <tr>
+                <th>Nomor Whatsapp</th>
+                <td>{{ $data->phone_number }}</td>
+            </tr>
+            <tr>
+                <th>Alamat</th>
+                <td>{{ $data->address }}</td>
+            </tr>
+            <tr>
+                <th>Keperluan</th>
+                <td>{{ $data->purpose }}</td>
+            </tr>
+            <tr>
+                <th>Nama Wali</th>
+                <td>{{ $data->parent_name }}</td>
+            </tr>
+            <tr>
+                <th>NIP</th>
+                <td>{{ $data->parent_nip }}</td>
+            </tr>
+            <tr>
+                <th>Pangkat/Gol.</th>
+                <td>{{ $data->parent_grade }}</td>
+            </tr>
+            <tr>
+                <th>Instansi/Tempat Kerja</th>
+                <td>{{ $data->parent_institution }}</td>
+            </tr>
+            <tr>
+                <th>Alamat Wali</th>
+                <td>{{ $data->parent_address }}</td>
+            </tr>
+            <tr>
+                <th>Lihat Surat</th>
+                <td>
+                    <a href="{{ route('validasi.surat_masih_kuliah.preview-pdf', ['id' => Crypt::encrypt($data->id)]) }}"
+                    class="btn btn-xs btn-primary"
+                    target="_blank">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <td>
+    <div class="card mt-4">
+    <div class="card-body">
+        <label class="d-block"><strong>Pilih status </strong><span style="color:red;">*</span></label>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="status" id="status_disetujui" value="disetujui"
+            {{ old('status', $data->adminValidation->status ?? '') == 'disetujui' ? 'checked' : '' }}
+            {{ $isDisabled ? 'disabled' : '' }} required>
+            <label class="form-check-label" for="status_disetujui">Disetujui</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="status" id="status_ditolak" value="ditolak"
+                {{ old('status', $data->adminValidation->status ?? '') == 'ditolak' ? 'checked' : '' }}
+                {{ $isDisabled ? 'disabled' : '' }}>
+            <label class="form-check-label" for="status_ditolak">Ditolak</label>
+        </div>
+    </div>
+</div>
+</td>
 
-                                <td>
-                                    <textarea name="notes" class="form-control form-control-sm" {{ $isDisabled ? 'disabled' : '' }}>{{ old('notes') }}</textarea>
-                                </td>
-                                <td>
-                                    <select name="status" class="form-control form-control-sm" {{ $isDisabled ? 'disabled' : '' }}>
-                                        <option value="disetujui" {{ old('status', $data->adminValidation->status ?? '') == 'disetujui' ? 'selected' : '' }}>
-                                            Disetujui
-                                        </option>
-                                        <option value="ditolak" {{ old('status', $data->adminValidation->status ?? '') == 'ditolak' ? 'selected' : '' }}>
-                                            Ditolak
-                                        </option>
-                                    </select>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+<td>
+    <div class="mb-2">
+        <label for="notes" class="d-block"><strong>Komentar</strong></label>
+        <textarea name="notes" id="notes" class="form-control form-control-sm mt-1 @error('notes') is-invalid @enderror" rows="3"
+    placeholder="Tulis komentar di sini..." {{ $isDisabled ? 'disabled' : '' }}>{{ old('notes') }}</textarea>
+
+@error('notes')
+    <div class="invalid-feedback d-block">{{ $message }}</div>
+@enderror
+
+    </div>
+</td>
+
+</div>
             </div>
 
 

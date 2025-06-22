@@ -12,7 +12,7 @@
                     <i class="fas fa-history"></i> Riwayat Ajuan
                 </a>
 
-                {!! buttonAdd('administrasi.surat_masih_kuliah.add', 'Tambah Ajuan') !!}
+                {!! buttonAdd('administrasi.surat_masih_kuliah.tambah', 'Tambah Ajuan') !!}
 
             </div>
         </div>
@@ -171,15 +171,38 @@
                                                 @if (in_array($letter->status, ['selesai', 'ditolak']))
                                                     <div style="font-size: 0.85em; color: gray;">
                                                         {{ $letter->updated_at }}
-                                                    </div>
-                                                @endif
+                                                        @php
+        $rejectedNotes = collect([
+            $letter->adminValidation,
+            $letter->advisorSignature,
+            $letter->headOfProgramSignature,
+            $letter->headOfDepartmentSignature,
+        ])
+            ->filter(fn($signature) => $signature && $signature->status === 'ditolak')
+            ->pluck('notes')
+            ->filter()
+            ->all();
+    @endphp
+
+    @if (count($rejectedNotes) > 0)
+        <div style="font-size: 0.95em; color: red; margin-top: 4px;">
+            Komentar:
+            <ul style="padding-left: 20px; margin: 0;">
+                @foreach ($rejectedNotes as $note)
+                    <li>{{ $note }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+@endif
+                                               
                                             </div>
                                         </li>
                                     </ul>
                                 </td>
 
                                 <td>
-                                    <a href="{{ route('administrasi.surat_masih_kuliah.detail', ['id' => Crypt::encrypt($letter->id)]) }}"
+                                    <a href="{{ route('administrasi.surat_masih_kuliah.preview', ['id' => Crypt::encrypt($letter->id)]) }}"
                                         class="btn btn-xs btn-primary">
                                         <i class="fas fa-eye"></i>
                                     </a>

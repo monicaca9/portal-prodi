@@ -164,7 +164,30 @@
                                                     <div style="font-size: 0.85em; color: gray;">
                                                         {{ $letter->updated_at }}
                                                     </div>
-                                                @endif
+                                                @php
+        $rejectedNotes = collect([
+            $letter->adminValidation,
+            $letter->advisorSignature,
+            $letter->headOfProgramSignature,
+            $letter->headOfDepartmentSignature,
+        ])
+            ->filter(fn($signature) => $signature && $signature->status === 'ditolak')
+            ->pluck('notes')
+            ->filter()
+            ->all();
+    @endphp
+
+    @if (count($rejectedNotes) > 0)
+        <div style="font-size: 0.95em; color: red; margin-top: 4px;">
+            Alasan penolakan:
+            <ul style="padding-left: 20px; margin: 0;">
+                @foreach ($rejectedNotes as $note)
+                    <li>{{ $note }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+@endif
                                             </div>
                                         </li>
                                     </ul>

@@ -41,6 +41,13 @@ Route::namespace('SuratAktifKuliah')->group(function () {
     Route::get($url . '/s/p/{code}', $controller . 'Controller@seeSignatureByShortCode')->name($route_alias . '.preview');
 });
 
+Route::namespace('SuratMasihKuliah')->group(function () {
+    $route_alias = 'sak';
+    $controller = 'StillStudyLetter';
+    $url = $route_alias;
+    Route::get($url . '/s/p/{code}', $controller . 'Controller@seeSignatureByShortCode')->name($route_alias . '.preview');
+});
+
 
 
 
@@ -690,8 +697,8 @@ Route::middleware('auth_custom')->group(function () {
                     $url = $route_alias;
 
                     Route::get($url, $controller . 'Controller@index')->name($route_alias);
-                    Route::get($url . '/add', $controller . 'Controller@create')->name($route_alias . '.add');
-                    Route::post($url . '/tambah', $controller . 'Controller@store')->name($route_alias . '.tambah');
+                    Route::get($url . '/tambah', $controller . 'Controller@create')->name($route_alias . '.tambah');
+                    Route::post($url . '/add', $controller . 'Controller@store')->name($route_alias . '.add');
                     Route::get($url . '/{id}/detail', $controller . 'Controller@detail')->name($route_alias . '.detail');
                     Route::get($url . '/{id}/edit', $controller . 'Controller@edit')->name($route_alias . '.edit');
                     Route::put($url . '/{id}/update', $controller . 'Controller@update')->name($route_alias . '.update');
@@ -717,8 +724,8 @@ Route::middleware('auth_custom')->group(function () {
                     $url = $route_alias;
 
                     Route::get($url, $controller . 'Controller@index')->name($route_alias);
-                    Route::get($url . '/add', $controller . 'Controller@create')->name($route_alias . '.add');
-                    Route::post($url . '/tambah', $controller . 'Controller@store')->name($route_alias . '.tambah');
+                    Route::get($url . '/tambah', $controller . 'Controller@create')->name($route_alias . '.tambah');
+                    Route::post($url . '/add', $controller . 'Controller@store')->name($route_alias . '.add');
                     Route::get($url . '/{id}/detail', $controller . 'Controller@detail')->name($route_alias . '.detail');
                     Route::get($url . '/{id}/edit', $controller . 'Controller@edit')->name($route_alias . '.edit');
                     Route::put($url . '/{id}/update', $controller . 'Controller@update')->name($route_alias . '.update');
