@@ -14,7 +14,8 @@ return new class extends Migration
             $table->foreign('submission_id')
                 ->references('id')
                 ->on('surat_masih.still_study_letter')
-                ->onDelete('cascade');
+                ->onDelete('cascade'); 
+                // onDelete('cascade'): Kalau data di tabel still_study_letter dihapus, maka data di tabel ini ikut dihapus otomatis
             $table->string('role');
             $table->string('notes')->nullable();
             $table->string('status')->default('menunggu');

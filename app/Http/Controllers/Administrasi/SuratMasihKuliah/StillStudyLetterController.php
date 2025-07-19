@@ -426,21 +426,21 @@ $data->save();
 
         $advisorQrCode = null;
         if (!empty($data->advisorSignature->short_code)) {
-            $url = route('sak.preview', ['code' => $data->advisorSignature->short_code]);
+            $url = route('smk.preview', ['code' => $data->advisorSignature->short_code]);
             $qrImage = QrCode::format('png')->size(100)->generate($url);
             $advisorQrCode = 'data:image/png;base64,' . base64_encode($qrImage);
         }
 
         $headOfProgramQrCode = null;
         if (!empty($data->headOfProgramSignature->short_code)) {
-            $url = route('sak.preview', ['code' => $data->headOfProgramSignature->short_code]);
+            $url = route('smk.preview', ['code' => $data->headOfProgramSignature->short_code]);
             $qrImage = QrCode::format('png')->size(100)->generate($url);
             $headOfProgramQrCode = 'data:image/png;base64,' . base64_encode($qrImage);
         }
 
         $headOfDepartementQrCode = null;
         if (!empty($data->headOfDepartmentSignature->short_code)) {
-            $url = route('sak.preview', ['code' => $data->headOfDepartmentSignature->short_code]);
+            $url = route('smk.preview', ['code' => $data->headOfDepartmentSignature->short_code]);
             $qrImage = QrCode::format('png')->size(100)->generate($url);
             $headOfDepartementQrCode = 'data:image/png;base64,' . base64_encode($qrImage);
         }

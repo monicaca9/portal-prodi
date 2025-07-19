@@ -33,16 +33,20 @@ Route::namespace('Auth')->group(function () {
     Route::post('auth/verfysso', 'LoginController@verifysso')->name('auth.do_verifysso');
 });
 
-
+// Semua Controller di dalam grup ini dianggap ada di folder SuratAktifKuliah.
+// Kenapa pakai namespace? Biar nggak perlu nulis nama folder panjang berkali-kali
 Route::namespace('SuratAktifKuliah')->group(function () {
+    // Bikin variabel alias namanya sak (Surat Aktif Kuliah), dipakai buat nyusun URL dan nama route
     $route_alias = 'sak';
     $controller = 'StudentActiveLetter';
     $url = $route_alias;
+    // Bikin jalur GET, artinya: jalur ini dipanggil lewat browser
+    // Kasih nama route: sak.preview. Buat apa? Supaya nanti di Blade bisa bikin URL
     Route::get($url . '/s/p/{code}', $controller . 'Controller@seeSignatureByShortCode')->name($route_alias . '.preview');
 });
 
 Route::namespace('SuratMasihKuliah')->group(function () {
-    $route_alias = 'sak';
+    $route_alias = 'smk';
     $controller = 'StillStudyLetter';
     $url = $route_alias;
     Route::get($url . '/s/p/{code}', $controller . 'Controller@seeSignatureByShortCode')->name($route_alias . '.preview');

@@ -11,10 +11,10 @@ return new class extends Migration {
             $table->uuid('id')->primary();
             $table->string('student_number');
             $table->string('name');
-            $table->string('department')->nullable();
-            $table->string('study_program')->nullable();
-            $table->string('semester')->nullable();
-            $table->string('academic_year')->nullable();
+            $table->string('department');
+            $table->string('study_program');
+            $table->string('semester');
+            $table->string('academic_year');
             $table->string('phone_number')->nullable();
             $table->text('address')->nullable();
             $table->text('purpose')->nullable();

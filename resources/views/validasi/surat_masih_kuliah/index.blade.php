@@ -13,22 +13,6 @@
         </div>
         <form method="GET" id="filterForm">
             <div class="row g-3 align-items-center mt-2 mx-4">
-                <div class="col-md-3 d-flex flex-column">
-                    <label for="status" class="form-label fw-semibold text-muted mb-2">Status</label>
-                    <select id="status" name="status" class="form-select rounded border border-primary"
-                        style="padding: 0.5rem 0.75rem; font-size: 1rem;">
-                        <option value="" {{ request('status') == '' ? 'selected' : '' }}>Semua</option>
-                        <option value="menunggu" {{ strtolower(request('status')) == 'menunggu' ? 'selected' : '' }}>
-                            Menunggu</option>
-                        <option value="proses" {{ strtolower(request('status')) == 'proses' ? 'selected' : '' }}>Proses
-                        </option>
-                        <option value="disetujui" {{ strtolower(request('status')) == 'disetujui' ? 'selected' : '' }}>
-                            Disetujui</option>
-                        <option value="ditolak" {{ strtolower(request('status')) == 'ditolak' ? 'selected' : '' }}>Ditolak
-                        </option>
-                    </select>
-                </div>
-
                 <div class="row g-3 align-items-center my-2 mx-2">
                     <label class="form-label fw-semibold text-muted mb-2 mx-2">Legenda</label>
                     <div class="col-md-12 d-flex flex-column">

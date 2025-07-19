@@ -46,7 +46,7 @@ class StillStudyLetter extends AbstractionModel
         'head_of_program_signature_id',
         'head_of_department_signature_id',
         'letter_number',
-        // Kolom baru sesuai standar lama:
+        
         'created_by',        // id_creator
         'created_at',        // tgl_create
         'updated_by',        // id_updater

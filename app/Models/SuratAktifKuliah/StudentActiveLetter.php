@@ -37,7 +37,7 @@ class StudentActiveLetter extends AbstractionModel
         'head_of_program_signature_id',
         'head_of_department_signature_id',
         'letter_number',
-        // Kolom baru sesuai standar lama:
+        
         'created_by',        // id_creator
         'created_at',        // tgl_create
         'updated_by',        // id_updater
@@ -63,6 +63,9 @@ class StudentActiveLetter extends AbstractionModel
     }
 
 
+    // Ini bikin relasi hasOne antara tabel student_active_letter dan letter_signature.
+    // Artinya: Satu surat punya satu tanda tangan validasi.
+    // Dicari di tabel letter_signature yang submission_id sama dengan id surat, dan role harus 6 (kode role admin).
     public function adminValidation()
     {
         return $this->hasOne(LetterSignature::class, 'submission_id', 'id')
@@ -94,8 +97,10 @@ class StudentActiveLetter extends AbstractionModel
         return $this->attributes['disable_validation_button'] ?? false;
     }
     
+    // dipake di controller validasi method update
     public function updateStatusBasedOnSignatures()
     {
+        // Buat array $signatures yang isinya 4 data tanda tangan
         $signatures = [
             $this->adminValidation()->first(),
             $this->advisorSignature()->first(),
@@ -103,42 +108,57 @@ class StudentActiveLetter extends AbstractionModel
             $this->headOfDepartmentSignature()->first(),
         ];
 
-
-        $allApproved = true;
+        // Buat 4 variabel kondisi awal
+        // anggap semua tanda tangan disetujui
+        $allApproved = true; 
+        // cek kalau ada minimal 1 yang disetujui
         $anyApproved = false;
+        // cek kalau ada minimal 1 yang ditolak
         $anyRejected = false;
+        // cek kalau ada minimal 1 tanda tangan
         $hasSignature = false;
 
+        // Lakukan perulangan untuk setiap tanda tangan
         foreach ($signatures as $signature) {
             if ($signature) {
+                // Kalau tanda tangan ada (tidak null), tandai $hasSignature jadi true
                 $hasSignature = true;
 
                 if ($signature->status === self::STATUS_REJECTED) {
+                // Kalau tanda tangan ditolak, tandai $anyRejected jadi true
                     $anyRejected = true;
                 }
 
                 if ($signature->status === self::STATUS_APPROVED) {
+                // Kalau tanda tangan disetujui, tandai $anyApproved jadi true
                     $anyApproved = true;
                 }
 
                 if ($signature->status !== self::STATUS_APPROVED) {
+                // Kalau tanda tangan tidak disetujui, tandai $allApproved jadi false
                     $allApproved = false;
                 }
             } else {
+                // Kalau tanda tangan null, tandai $allApproved jadi false
                 $allApproved = false;
             }
         }
 
+        //  Kalau ada minimal 1 ditolak, maka status surat jadi REJECTED
         if ($anyRejected) {
             $this->status = self::STATUS_REJECTED;
         } elseif ($hasSignature && $allApproved) {
+        //  Kalau ada tanda tangan dan semua disetujui, status surat jadi DONE (selesai)
             $this->status = self::STATUS_DONE;
         } elseif ($anyApproved) {
+        // Kalau ada minimal 1 disetujui (tapi belum semua), status jadi PROCESSED (sedang diproses)
             $this->status = self::STATUS_PROCESSED;
         } else {
+        // Kalau belum ada tanda tangan atau masih menunggu, status tetap PENDING
             $this->status = self::STATUS_PENDING;
         }
 
+        // Simpan perubahan status ke database
         $this->save();
     }
 

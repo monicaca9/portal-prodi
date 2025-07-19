@@ -51,11 +51,6 @@ class StillStudyLetterController extends Controller
             $query->where('status', '!=', 'dibuat');
         }
 
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
         $stillStudyLetters = $query->latest()->get();
 
         foreach ($stillStudyLetters as $letter) {
@@ -177,7 +172,6 @@ class StillStudyLetterController extends Controller
         if (!$signature) {
             $signature = new SignatureLetter();
             $signature->id = Str::uuid();
-
             $signature->submission_id = $letter->id;
             $signature->role = $userRole;
         }

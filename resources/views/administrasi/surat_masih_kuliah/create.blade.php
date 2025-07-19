@@ -140,7 +140,7 @@
                     <label for="supporting_document" class="col-sm-2 col-form-label">
                     Slip UKT Terakhir <span style="color:red;">*</span><br>
                     <span style="font-size: 0.8em; color: #888;">
-                    <em>(Silakan unggah file dengan format .pdf)</em>
+                    <em>(Format file .pdf <br> Max. ukuran file 2MB)</em>
                     </span>
                      </label>
                     <div class="col-sm-10">
@@ -157,7 +157,7 @@
                     <label for="supporting_document2" class="col-sm-2 col-form-label">
                         KP4 Orang Tua (PNS aktif) atau<br>SK Pensiun (pensiun PNS) atau<br>Surat Keterangan Kerja Orang Tua (Swasta) <span style="color:red;">*</span><br>
                     <span style="font-size: 0.8em; color: #888;">
-                    <em>(Silakan unggah file dengan format .pdf)</em>
+                    <em>(Format file .pdf <br> Max. ukuran file 2MB)</em>
                     </span>
                      </label>
                     <div class="col-sm-10">

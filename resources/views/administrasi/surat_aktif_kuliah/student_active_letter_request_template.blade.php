@@ -57,8 +57,11 @@
     </div>
 
     <div style="padding-top: 10px; margin-left: 16px; margin-right: 16px;">
+        {{-- Bagian Atas: Dua Kolom --}}
         <table style="width: 100%; margin-top: 30px;">
             <tr>
+                <!-- Kolom Kiri: Pembimbing Akademik -->
+                {{-- width: 60%: Menempatkan kolom kiri agar lebih lebar --}}
                 <td style="width: 60%; text-align: left;">
                     <table style="width: 100%; text-align: left;">
                         <tr>
@@ -69,13 +72,13 @@
                         </tr>
                         <tr>
                             <td colspan="2" style="height: 80px">
+                                {{-- Periksa apakah $advisorQrCode TIDAK kosong, Kalau variabel ADA ISINYA, maka kodenya di dalam blok if akan dijalankan. --}}
                                 @if (!empty($advisorQrCode))
                                     <img src="{{ $advisorQrCode }}" alt="QR Signature" width="100">
                                 @else
-                                    
+                                    {{-- Bagian else kosong → tidak menampilkan apa pun. Jadi kalau $advisorQrCode kosong, gambar QR tidak muncul --}}
                                 @endif
                             </td>
-
                         </tr>
                         <tr>
                             <td>{{ $data->academic_advisor_name ?? '' }}</td>
@@ -85,6 +88,8 @@
                         </tr>
                     </table>
                 </td>
+
+                <!-- Kolom Kanan: Pemohon (Mahasiswa) -->
                 <td style="width: 40%; text-align: left;">
                     <table style="width: 100%; text-align: left;">
                         <tr>
@@ -118,7 +123,10 @@
             </tr>
         </table>
 
+        {{-- Membuat isi tabel tengah bawah tetap rata kiri tapi posisinya di tengah halaman. --}}
         <div style="padding-top: 40px; text-align: center; margin-top: 20px;">
+            {{-- inline-block = Biar tabelnya: Nggak 100% melebar kalau isinya pendek, jadi ngikut ukuran isinya
+            Bisa rapi di tengah (karena text-align: center; di div luar). --}}
             <div style="display: inline-block;">
                 <table style="width: 100%; text-align: left; margin-left: auto; margin-right: auto; margin-top: 20px;">
                     <tr>

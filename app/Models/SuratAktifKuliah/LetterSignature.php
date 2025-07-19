@@ -23,7 +23,6 @@ class LetterSignature extends AbstractionModel
         'notes',
         'status',
         'short_code',
-        // Kolom baru sesuai standar lama:
         'created_by',        // id_creator
         'created_at',        // tgl_create
         'updated_by',        // id_updater
