@@ -203,18 +203,15 @@
     </div>
 
     @push('js')
-        <script>
-            document.getElementById('status').addEventListener('change', function() {
-                document.getElementById('filterForm').submit();
-            });
-            @if (session('success'))
+        @if (session('success'))
+            <script>
                 swal({
                     title: "Berhasil!",
                     text: "{{ session('success') }}",
                     icon: "success",
                     button: "OK",
                 });
+            </script>
         @endif
-        </script>
     @endpush
 @endsection

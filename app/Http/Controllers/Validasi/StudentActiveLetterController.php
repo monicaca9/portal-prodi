@@ -303,7 +303,7 @@ class StudentActiveLetterController extends Controller
         $letter->updateStatusBasedOnSignatures();
 
         return redirect()->route('validasi.surat_aktif_kuliah', ['id' => $id])
-            ->with('success', 'Data berhasil divalidasi.');
+            ->with('success', 'Data berhasil divalidasi!');
     }
 
 

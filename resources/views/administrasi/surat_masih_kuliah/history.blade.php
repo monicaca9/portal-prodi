@@ -6,7 +6,7 @@
         <div class="card-header">
             <h3 class="card-title"><i class="fas fa-envelope"></i> RIWAYAT SURAT MASIH KULIAH</h3>
             <div class="card-tools">
-                {!! buttonAdd('administrasi.surat_masih_kuliah.add', 'Tambah Ajuan') !!}
+                {!! buttonAdd('administrasi.surat_masih_kuliah.tambah', 'Tambah Ajuan') !!}
             </div>
         </div>
         <div class="card-body">
@@ -77,13 +77,13 @@
                                 <td>{{ $letter->name }}</td>
                                 <td>Surat Masih Kuliah</td>
                                 <td>{{ isset($letter->created_at) ? tglIndonesia($letter->created_at) : '-' }}</td>
-                                <td>
-                                    @if (!empty($letter->status_updated_at) && strtotime($letter->status_updated_at))
-                                        {{ tglIndonesia($letter->status_updated_at) }}
-                                    @else
-                                        -
-                                    @endif
-                                </td>
+                            <td>
+                                @if (strtolower($letter->status) === 'selesai')
+                                    {{ tglIndonesia($letter->updated_at) }}
+                                @else
+                                    -
+                                @endif
+                            </td>
                                 <td>{{ $letter->time_diff }}</td>
                                 @php
                                     $rejectedNotes = collect([

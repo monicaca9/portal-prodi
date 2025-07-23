@@ -80,13 +80,13 @@
                                 <td>{{ $letter->name }}</td>
                                 <td>Surat Masih Kuliah</td>
                                 <td>{{ isset($letter->created_at) ? tglIndonesia($letter->created_at) : '-' }}</td>
-                                <td>
-                                    @if (!empty($letter->status_updated_at) && strtotime($letter->status_updated_at))
-                                        {{ tglIndonesia($letter->status_updated_at) }}
-                                    @else
-                                        -
-                                    @endif
-                                </td>
+                            <td>
+                                @if (strtolower($letter->status) === 'selesai')
+                                    {{ tglIndonesia($letter->updated_at) }}
+                                @else
+                                    -
+                                @endif
+                            </td>
                                 <td>{{ $letter->time_diff }}</td>
                                 @php
                                     $rejectedNotes = collect([
