@@ -23,8 +23,8 @@
                                 Menunggu</option>
                             <option value="proses" {{ strtolower(request('status')) == 'proses' ? 'selected' : '' }}>
                                 Proses</option>
-                            <option value="disetujui" {{ strtolower(request('status')) == 'disetujui' ? 'selected' : '' }}>
-                                Disetujui</option>
+                            <option value="selesai" {{ strtolower(request('status')) == 'selesai' ? 'selected' : '' }}>
+                                Selesai</option>
                             <option value="ditolak" {{ strtolower(request('status')) == 'ditolak' ? 'selected' : '' }}>
                                 Ditolak</option>
                         </select>
@@ -74,12 +74,12 @@
                         @forelse($stillStudyLetters as $no => $letter)
                             <tr>
                                 <td>{{ $no + 1 }}</td>
-                                <td>{{ $letter->name }}</td>
+                                <td>{{ $letter->nama }}</td>
                                 <td>Surat Masih Kuliah</td>
-                                <td>{{ isset($letter->created_at) ? tglIndonesia($letter->created_at) : '-' }}</td>
+                                <td>{{ isset($letter->tgl_create) ? tglIndonesia($letter->tgl_create) : '-' }}</td>
                             <td>
                                 @if (strtolower($letter->status) === 'selesai')
-                                    {{ tglIndonesia($letter->updated_at) }}
+                                    {{ tglIndonesia($letter->last_updated) }}
                                 @else
                                     -
                                 @endif
@@ -95,7 +95,7 @@
                                         ->filter(function ($signature) {
                                             return $signature && $signature->status === 'ditolak';
                                         })
-                                        ->pluck('notes')
+                                        ->pluck('komentar')
                                         ->filter()
                                         ->all();
                                 @endphp
@@ -115,11 +115,12 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <a href="{{ route('administrasi.surat_masih_kuliah.detail', ['id' => Crypt::encrypt($letter->id)]) }}"
-                                        class="btn btn-xs btn-primary">
+                                    <a href="{{ route('validasi.surat_masih_kuliah.preview-pdf', ['id' => Crypt::encrypt($letter->id)]) }}"
+                                        class="btn btn-xs btn-primary"
+                                        target="_blank">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{{ route('administrasi.surat_masih_kuliah.download-pdf', ['id' => Crypt::encrypt($letter->id)]) }}"
+                                    <a href="{{ route('validasi.surat_masih_kuliah.download-pdf', ['id' => Crypt::encrypt($letter->id)]) }}"
                                         class="btn btn-success btn-flat btn-xs mx-3">
                                         <i class="fa fa-download"></i> Unduh
                                     </a>

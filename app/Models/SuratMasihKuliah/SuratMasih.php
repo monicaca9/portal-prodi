@@ -1,50 +1,60 @@
 <?php
 
-namespace App\Models\SuratAktifKuliah;
+namespace App\Models\SuratMasihKuliah;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\AbstractionModel;
 use App\Models\Pdrd\PesertaDidik;
-use App\Models\SuratAktifKuliah\LetterSignature;
+use App\Models\SuratMasihKuliah\ValidasiSurat;
+use App\Models\SuratMasihKuliah\NomorSurat;
 
-class StudentActiveLetter extends AbstractionModel
+class SuratMasih extends AbstractionModel
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'surat_aktif.student_active_letter';
+    protected $table = 'surat_masih.surat_masih';
     protected $primaryKey = 'id';
     public $incrementing = false;
     protected $keyType = 'string';
 
     protected $fillable = [
         'id',
-        'name',
-        'student_number',
-        'department',
-        'study_program',
+        'nama',
+        'npm',
+        'jurusan',
+        'prodi',
         'semester',
-        'academic_year',
-        'phone_number',
-        'address',
-        'purpose',
-        'signature',
-        'academic_advisor',
-        'supporting_document',
+        'thn_akademik',
+        'no_hp',
+        'alamat',
+        'tujuan',
+        'nama_ortu',
+        'nip_ortu',
+        'pangkat_ortu',
+        'pekerjaan_ortu',
+        'instansi_ortu',
+        'alamat_ortu',
+        'validasi',
+        'dosen_pa',
+        'dokumen',
+        'dokumen2',
         'status',
-        'admin_validation_id',
-        'advisor_signature_id',
-        'head_of_program_signature_id',
-        'head_of_department_signature_id',
-        'letter_number',
+        'id_validasi_admin',
+        'id_validasi_pa',
+        'id_validasi_kaprodi',
+        'id_validasi_kajur',
+        'no_surat',
         
-        'created_by',        // id_creator
+        'id_creator',        // id_creator
         'tgl_create',        // tgl_create
-        'updated_by',        // id_updater
-        'updated_at',        // last_update
+        'last_update',        
+        'updated_at',  
+        'updated_by',     
         'soft_delete',       // soft_delete
         'last_sync',         // last_sync
     ];
+    const CREATED_AT = 'tgl_create';
 
     const STATUS_PENDING = 'menunggu';
     const STATUS_APPROVED = 'disetujui';
@@ -54,39 +64,36 @@ class StudentActiveLetter extends AbstractionModel
 
     public function createdBy()
     {
-        return $this->belongsTo(PesertaDidik::class, 'created_by', 'id_pd');
+        return $this->belongsTo(PesertaDidik::class, 'id_creator', 'id_pd');
     }
 
     public function letterNumber()
     {
-        return $this->belongsTo(LetterNumber::class, 'letter_number', 'id');
+        return $this->belongsTo(NomorSurat::class, 'no_surat', 'id');
     }
 
 
-    // Ini bikin relasi hasOne antara tabel student_active_letter dan letter_signature.
-    // Artinya: Satu surat punya satu tanda tangan validasi.
-    // Dicari di tabel letter_signature yang submission_id sama dengan id surat, dan role harus 6 (kode role admin).
     public function adminValidation()
     {
-        return $this->hasOne(LetterSignature::class, 'submission_id', 'id')
+        return $this->hasOne(ValidasiSurat::class, 'submission_id', 'id')
             ->where('role', 6);
     }
 
     public function advisorSignature()
     {
-        return $this->hasOne(LetterSignature::class, 'submission_id', 'id')
+        return $this->hasOne(ValidasiSurat::class, 'submission_id', 'id')
             ->where('role', 46);
     }
 
     public function headOfProgramSignature()
     {
-        return $this->hasOne(LetterSignature::class, 'submission_id', 'id')
+        return $this->hasOne(ValidasiSurat::class, 'submission_id', 'id')
             ->where('role', 3000);
     }
 
     public function headOfDepartmentSignature()
     {
-        return $this->hasOne(LetterSignature::class, 'submission_id', 'id')
+        return $this->hasOne(ValidasiSurat::class, 'submission_id', 'id')
             ->where('role', 3001);
     }
 
@@ -97,10 +104,8 @@ class StudentActiveLetter extends AbstractionModel
         return $this->attributes['disable_validation_button'] ?? false;
     }
     
-    // dipake di controller validasi method update
     public function updateStatusBasedOnSignatures()
     {
-        // Buat array $signatures yang isinya 4 data tanda tangan
         $signatures = [
             $this->adminValidation()->first(),
             $this->advisorSignature()->first(),
@@ -108,57 +113,42 @@ class StudentActiveLetter extends AbstractionModel
             $this->headOfDepartmentSignature()->first(),
         ];
 
-        // Buat 4 variabel kondisi awal
-        // anggap semua tanda tangan disetujui
-        $allApproved = true; 
-        // cek kalau ada minimal 1 yang disetujui
+
+        $allApproved = true;
         $anyApproved = false;
-        // cek kalau ada minimal 1 yang ditolak
         $anyRejected = false;
-        // cek kalau ada minimal 1 tanda tangan
         $hasSignature = false;
 
-        // Lakukan perulangan untuk setiap tanda tangan
         foreach ($signatures as $signature) {
             if ($signature) {
-                // Kalau tanda tangan ada (tidak null), tandai $hasSignature jadi true
                 $hasSignature = true;
 
                 if ($signature->status === self::STATUS_REJECTED) {
-                // Kalau tanda tangan ditolak, tandai $anyRejected jadi true
                     $anyRejected = true;
                 }
 
                 if ($signature->status === self::STATUS_APPROVED) {
-                // Kalau tanda tangan disetujui, tandai $anyApproved jadi true
                     $anyApproved = true;
                 }
 
                 if ($signature->status !== self::STATUS_APPROVED) {
-                // Kalau tanda tangan tidak disetujui, tandai $allApproved jadi false
                     $allApproved = false;
                 }
             } else {
-                // Kalau tanda tangan null, tandai $allApproved jadi false
                 $allApproved = false;
             }
         }
 
-        //  Kalau ada minimal 1 ditolak, maka status surat jadi REJECTED
         if ($anyRejected) {
             $this->status = self::STATUS_REJECTED;
         } elseif ($hasSignature && $allApproved) {
-        //  Kalau ada tanda tangan dan semua disetujui, status surat jadi DONE (selesai)
             $this->status = self::STATUS_DONE;
         } elseif ($anyApproved) {
-        // Kalau ada minimal 1 disetujui (tapi belum semua), status jadi PROCESSED (sedang diproses)
             $this->status = self::STATUS_PROCESSED;
         } else {
-        // Kalau belum ada tanda tangan atau masih menunggu, status tetap PENDING
             $this->status = self::STATUS_PENDING;
         }
 
-        // Simpan perubahan status ke database
         $this->save();
     }
 
@@ -197,7 +187,7 @@ class StudentActiveLetter extends AbstractionModel
     public function getStatusUpdatedAtAttribute()
     {
         if ($this->status === self::STATUS_APPROVED || $this->status === self::STATUS_REJECTED) {
-            return $this->updated_at ? \Carbon\Carbon::parse($this->updated_at)->format('Y-m-d H:i:s') : '-';
+            return $this->last_update ? \Carbon\Carbon::parse($this->last_update)->format('Y-m-d H:i:s') : '-';
         }
 
         return '-';
@@ -209,7 +199,7 @@ class StudentActiveLetter extends AbstractionModel
     {
         static::creating(function ($model) {
             $pesertaDidik = PesertaDidik::where('id_pd', auth()->user()->id_pd_pengguna)->first();
-            $model->created_by = $pesertaDidik ? $pesertaDidik->id_pd : null;
+            $model->id_creator = $pesertaDidik ? $pesertaDidik->id_pd : null;
             $model->tgl_create = now();
             $model->last_sync = now();
         });
@@ -217,7 +207,7 @@ class StudentActiveLetter extends AbstractionModel
         static::updating(function ($model) {
             $pesertaDidik = PesertaDidik::where('id_pd', auth()->user()->id_pd_pengguna)->first();
             $model->updated_by = $pesertaDidik ? $pesertaDidik->id_pd : null;
-            $model->updated_at = now();
+            $model->last_update = now();
             $model->last_sync = now();
         });
     }

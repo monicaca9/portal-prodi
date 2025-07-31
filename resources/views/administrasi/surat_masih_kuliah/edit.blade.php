@@ -11,28 +11,28 @@
                 <h3 class="card-title"><i class="fas fa-history"></i> Ubah Data Administrasi - {{ $data->name }}</h3>
             </div>
             <div class="card-body">
-                {!! FormInputText('name', 'Nama Lengkap', 'text', $data->name, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
-                {!! FormInputText('student_number', 'NPM', 'number', $data->student_number, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
-                {!! FormInputText('department', 'Jurusan', 'text', $data->department, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
-                {!! FormInputText('study_program', 'Program Studi', 'text', $data->study_program, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
-                {!! FormInputText('academic_year', 'Tahun Akademik', 'text', $currentAcademicYear, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
+                {!! FormInputText('nama', 'Nama Lengkap', 'text', $data->nama, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
+                {!! FormInputText('npm', 'NPM', 'number', $data->npm, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
+                {!! FormInputText('jurusan', 'Jurusan', 'text', $data->jurusan, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
+                {!! FormInputText('prodi', 'Program Studi', 'text', $data->prodi, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
+                {!! FormInputText('thn_akademik', 'Tahun Akademik', 'text', $currentAcademicYear, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
                 {!! FormInputText('semester', 'Semester', 'text', $data->semester, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
 
-                {!! FormInputText('phone_number', 'Nomor Whatsapp', 'number', $data->phone_number, ['required' => true]) !!}
-                {!! FormInputText('address', 'Alamat', 'text', $data->address, ['required' => true]) !!}
-                {!! FormInputText('purpose', 'Keperluan', 'text', $data->purpose, ['required' => true]) !!}
-                {!! FormInputText('parent_name', 'Nama Ibu/Ayah', 'text', $data->parent_name, ['required' => true]) !!}
-                {!! FormInputText('parent_nip', 'NIP', 'text', $data->parent_nip, ['required' => true]) !!}
-                {!! FormInputText('parent_grade', 'Pangkat/Gol.', 'text', $data->parent_grade, ['required' => true]) !!}
-                {!! FormInputText('parent_job', 'Pekerjaan', 'text', $data->parent_job, ['required' => true]) !!}
-                {!! FormInputText('parent_institution', 'Instansi/Tempat Kerja', 'text', $data->parent_institution, ['required' => true]) !!}
-                {!! FormInputText('parent_address', 'Alamat Ibu/Ayah', 'text', $data->parent_address, ['required' => true]) !!}
+                {!! FormInputText('no_hp', 'Nomor Whatsapp', 'number', $data->no_hp, ['required' => true]) !!}
+                {!! FormInputText('alamat', 'Alamat', 'text', $data->alamat, ['required' => true]) !!}
+                {!! FormInputText('tujuan', 'Keperluan', 'text', $data->tujuan, ['required' => true]) !!}
+                {!! FormInputText('nama_ortu', 'Nama Ibu/Ayah', 'text', $data->nama_ortu, ['required' => true]) !!}
+                {!! FormInputText('nip_ortu', 'NIP', 'text', $data->nip_ortu, ['required' => true]) !!}
+                {!! FormInputText('pangkat_ortu', 'Pangkat/Gol.', 'text', $data->pangkat_ortu, ['required' => true]) !!}
+                {!! FormInputText('pekerjaan_ortu', 'Pekerjaan', 'text', $data->pekerjaan_ortu, ['required' => true]) !!}
+                {!! FormInputText('instansi_ortu', 'Instansi/Tempat Kerja', 'text', $data->instansi_ortu, ['required' => true]) !!}
+                {!! FormInputText('alamat_ortu', 'Alamat Ibu/Ayah', 'text', $data->alamat_ortu, ['required' => true]) !!}
 
                 <div class="mb-3 d-flex align-items-center">
                     <label for="signatureCanvas" style="width: 150px; margin-bottom: 0;">Tanda Tangan</label>
 
                  <!-- Preview tanda tangan lama -->
-                <img id="signaturePreview" src="{{ $data->signature ? Storage::url($data->signature) : '' }}" 
+                <img id="signaturePreview" src="{{ $data->validasi ? Storage::url($data->validasi) : '' }}" 
                     alt="Tanda Tangan" style="max-height: 150px; cursor: default; margin-right: 15px;" />
 
                 <!-- Button untuk ubah tanda tangan -->
@@ -45,7 +45,7 @@
                 <button type="button" class="btn btn-secondary btn-sm mt-2" id="clearSignature" style="display:none; margin-right: 15px;">Bersihkan</button>
 
                 <!-- Input hidden untuk menyimpan data tanda tangan base64 -->
-                <input type="hidden" name="signature" id="signatureInput" value="{{ old('signature', $data->signature) }}">
+                <input type="hidden" name="validasi" id="signatureInput" value="{{ old('validasi', $data->validasi) }}">
             </div>
 
         <script>
@@ -104,62 +104,62 @@
         </script>
 
     <div class="mb-3">
-    <label for="supporting_document" class="form-label" style="width: 150px;">Slip UKT Terakhir</label>
+    <label for="dokumen" class="form-label" style="width: 150px;">Slip UKT Terakhir</label>
     
     <div class="d-flex align-items-center">
         {{-- Tampilkan nama file kalau sudah ada --}}
-        @if ($data->supporting_document)
-            <span id="file-name-supporting_document" style="margin-right: 15px;">
-                {{ basename($data->supporting_document) }}
+        @if ($data->dokumen)
+            <span id="file-name-dokumen" style="margin-right: 15px;">
+                {{ basename($data->dokumen) }}
             </span>
         @else
-            <span id="file-name-supporting_document" style="margin-right: 15px;">Belum ada file</span>
+            <span id="file-name-dokumen" style="margin-right: 15px;">Belum ada file</span>
         @endif
 
         {{-- Tombol untuk upload ulang --}}
-        <button type="button" class="btn btn-secondary btn-sm mt-2" onclick="document.getElementById('supporting_document').click()">
+        <button type="button" class="btn btn-secondary btn-sm mt-2" onclick="document.getElementById('dokumen').click()">
             Pilih File
         </button>
     </div>
 
     {{-- Input file disembunyikan --}}
-    <input type="file" name="supporting_document" id="supporting_document" accept="application/pdf" style="display: none;"
+    <input type="file" name="dokumen" id="dokumen" accept="application/pdf" style="display: none;"
         onchange="updateFileName(event)">
 </div>
 
 
     <div class="mb-3">
-    <label for="supporting_document2" class="form-label" style="width: 150px;">KP4 Orang Tua (PNS aktif) atau<br>SK Pensiun (pensiun PNS) atau<br>Surat Keterangan Kerja Orang Tua (Swasta) <span style="color:red;">*</span><br></label>
+    <label for="dokumen2" class="form-label" style="width: 150px;">KP4 Orang Tua (PNS aktif) atau<br>SK Pensiun (pensiun PNS) atau<br>Surat Keterangan Kerja Orang Tua (Swasta) <span style="color:red;">*</span><br></label>
     
     <div class="d-flex align-items-center">
         {{-- Tampilkan nama file kalau sudah ada --}}
-        @if ($data->supporting_document2)
-            <span id="file-name-supporting_document2" style="margin-right: 15px;">
-                {{ basename($data->supporting_document2) }}
+        @if ($data->dokumen2)
+            <span id="file-name-dokumen2" style="margin-right: 15px;">
+                {{ basename($data->dokumen2) }}
             </span>
         @else
-            <span id="file-name-supporting_document2" style="margin-right: 15px;">Belum ada file</span>
+            <span id="file-name-dokumen2" style="margin-right: 15px;">Belum ada file</span>
         @endif
 
         {{-- Tombol untuk upload ulang --}}
-        <button type="button" class="btn btn-secondary btn-sm mt-2" onclick="document.getElementById('supporting_document2').click()">
+        <button type="button" class="btn btn-secondary btn-sm mt-2" onclick="document.getElementById('dokumen2').click()">
             Pilih File
         </button>
     </div>
 
     {{-- Input file disembunyikan --}}
-    <input type="file" name="supporting_document2" id="supporting_document2" accept="application/pdf" style="display: none;"
+    <input type="file" name="dokumen2" id="dokumen2" accept="application/pdf" style="display: none;"
         onchange="updateFileName(event)">
 </div>
 
 
                 {!! FormInputSelect(
-                    'academic_advisor',
+                    'dosen_pa',
                     'Pilih Dosen PA',
                     true,
                     true,
                     $academicAdvisors,
-                    $data->academic_advisor,
+                    $data->dosen_pa,
                 ) !!}
             </div>
 
@@ -189,7 +189,7 @@
             function updateFileName(event) {
             const input = event.target;
             const fileName = input.files[0]?.name || 'Belum ada file';
-            const spanId = 'file-name-' + input.id; // Misal: supporting_document → file-name-supporting_document
+            const spanId = 'file-name-' + input.id; // Misal: dokumen → file-name-dokumen
             const fileNameSpan = document.getElementById(spanId);
             if (fileNameSpan) {
                 fileNameSpan.textContent = fileName;

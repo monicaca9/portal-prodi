@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Validasi;
 
 use App\Http\Controllers\Controller;
-use App\Models\SuratAktifKuliah\StudentActiveLetter;
-use App\Models\SuratAktifKuliah\LetterNumber;
-use App\Models\SuratAktifKuliah\LetterSignature;
+use App\Models\SuratAktifKuliah\SuratAktif;
+use App\Models\SuratAktifKuliah\NomorSurat;
+use App\Models\SuratAktifKuliah\ValidasiSurat;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Auth;
@@ -31,13 +31,13 @@ class StudentActiveLetterController extends Controller
             : (request()->get('id_sdm_pengguna') ?? Str::uuid());
 
         // Ambil data surat aktif kuliah
-        $query = StudentActiveLetter::query();
+        $query = SuratAktif::query();
 
         if ($userRole == 46) {
             // Jangan tampilin surat yang masih tahap awal dibuat (belum diajukan mahasiswa).
             $query->where('status', '!=', 'dibuat')
             // Cuma tampilin surat dari mahasiswa yang dosen pembimbingnya adalah userId yg login sblmnya
-                ->where('academic_advisor', $userId);
+                ->where('dosen_pa', $userId);
         } elseif ($userRole == 6) {
             // cari data utama (surat) yang punya tanda tangan dosen PA
             $query->whereHas('advisorSignature', function ($q) {
@@ -59,7 +59,7 @@ class StudentActiveLetterController extends Controller
 
         // Ambil semua data surat aktif kuliah dari database, yang paling baru ditampilkan duluan
         // dan simpan ke variabel bernama $studentActiveLetters
-        $studentActiveLetters = $query->latest()->get();
+        $studentActiveLetters = $query->orderBy('id', 'desc')->get();
 
         // Ambil surat satu per satu dari daftar $studentActiveLetters dan masing2 surat simpan di $letter
         foreach ($studentActiveLetters as $letter) {
@@ -69,10 +69,10 @@ class StudentActiveLetterController extends Controller
                 // Simpan hasil pengecekan ini ke variabel $disable
                 // Kalau hasilnya ada (misal nilainya 123) → artinya validasi udah dilakukan, jadi tombol harus dimatikan (TRUE).
                 // Kalau hasilnya null → artinya belum divalidasi, tombol boleh dipencet (FALSE/NULL).
-                6     => $letter->admin_validation_id,
-                46 => $letter->advisor_signature_id,
-                3000  => $letter->head_of_program_signature_id,
-                3001  => $letter->head_of_department_signature_id,
+                6     => $letter->id_validasi_admin,
+                46 => $letter->id_validasi_pa,
+                3000  => $letter->id_validasi_kaprodi,
+                3001  => $letter->id_validasi_kajur,
                 default => false,
             };
             // Tambahkan properti disable_validation_button ke surat ini, lalu isi pakai $disable
@@ -88,14 +88,14 @@ class StudentActiveLetterController extends Controller
     public function history(Request $request)
     {
         // Ambil data surat dari database, kecuali yang masih status 'dibuat' (alias belum diajukan oleh mahasiswa)
-        $query = StudentActiveLetter::where('status', '!=', 'dibuat');
+        $query = SuratAktif::where('status', '!=', 'dibuat');
 
         if ($request->filled('created_start')) {
-            $query->whereDate('created_at', '>=', $request->created_start);
+            $query->whereDate('tgl_create', '>=', $request->created_start);
         }
 
         if ($request->filled('created_end')) {
-            $query->whereDate('created_at', '<=', $request->created_end);
+            $query->whereDate('tgl_create', '<=', $request->created_end);
         }
 
         if ($request->filled('status')) {
@@ -103,7 +103,7 @@ class StudentActiveLetterController extends Controller
         }
 
         // Setelah semua filter di atas selesai, ambil datanya dari database
-        $studentActiveLetters = $query->latest()->get();
+        $studentActiveLetters = $query->orderBy('id', 'desc')->get();
 
         return view('validasi.surat_aktif_kuliah.history', compact('studentActiveLetters'));
     }
@@ -113,14 +113,14 @@ class StudentActiveLetterController extends Controller
     public function exportExcel(Request $request)
     {
         // Ambil data surat dari database, kecuali yang masih status 'dibuat' (alias belum diajukan oleh mahasiswa)
-        $query = StudentActiveLetter::where('status', '!=', 'dibuat');
+        $query = SuratAktif::where('status', '!=', 'dibuat');
 
         if ($request->filled('created_start')) {
-            $query->whereDate('created_at', '>=', $request->created_start);
+            $query->whereDate('tgl_create', '>=', $request->created_start);
         }
 
         if ($request->filled('created_end')) {
-            $query->whereDate('created_at', '<=', $request->created_end);
+            $query->whereDate('tgl_create', '<=', $request->created_end);
         }
 
         if ($request->filled('status')) {
@@ -128,7 +128,7 @@ class StudentActiveLetterController extends Controller
         }
 
         // Setelah semua filter di atas selesai, ambil datanya dari database
-        $studentActiveLetters = $query->latest()->get();
+        $studentActiveLetters = $query->orderBy('id', 'desc')->get();
 
         return Excel::download(new StudentActiveLetterExport($studentActiveLetters), 'riwayat_surat_aktif_kuliah.xlsx');
     }
@@ -140,27 +140,27 @@ class StudentActiveLetterController extends Controller
         // Buka kunci ID yang tadinya dikirim dalam bentuk acak (encrypted), jadi bisa dipakai untuk cari data di database
         $decryptedId = Crypt::decrypt($id);
         // Ambil data surat berdasarkan ID yang sudah didekripsi, dan ikut ambil relasi letterNumber-nya (nomor surat)
-        $data = StudentActiveLetter::with('letterNumber')->where('id', $decryptedId)->first();
+        $data = SuratAktif::with('letterNumber')->where('id', $decryptedId)->first();
 
         $defaultCode = 'UN26.15.07/KM';
         // tahun sekarang
         $defaultYear = date('Y');
 
         // Ambil code dan year dari surat jika sudah ada, kalau belum, pakai nilai default sebelumnya
-        $code = $data->letterNumber->code ?? $defaultCode;
-        $year = $data->letterNumber->year ?? $defaultYear;
+        $code = $data->letterNumber->kode ?? $defaultCode;
+        $year = $data->letterNumber->tahun ?? $defaultYear;
 
         // cari nomor surat terakhir di database untuk tahun dan kode tertentu,
         // terus tambah 1. misal 57 → nextNumber = 58
         // Kalau sama sekali gak ada, mulai dari 1
-        $nextNumber = $data->letterNumber->number ?? LetterNumber::where('year', $year)
-            ->where('code', $code)
-            ->orderBy('number', 'desc')
-            ->value('number') + 1 ?? 1;
+        $nextNumber = $data->letterNumber->nomor ?? NomorSurat::where('tahun', $year)
+            ->where('kode', $code)
+            ->orderBy('nomor', 'desc')
+            ->value('nomor') + 1 ?? 1;
 
         // Ambil riwayat semua surat milik mahasiswa ini (berdasarkan NIM), dari yang terbaru ke paling lama
-        $studentActiveLetters = StudentActiveLetter::where('student_number', $data->student_number)
-        ->orderBy('created_at', 'desc')
+        $studentActiveLetters = SuratAktif::where('npm', $data->npm)
+        ->orderBy('tgl_create', 'desc')
         ->get();
 
         return view('validasi.surat_aktif_kuliah.edit', compact('data', 'code', 'year', 'nextNumber', 'studentActiveLetters'));
@@ -189,12 +189,12 @@ class StudentActiveLetterController extends Controller
             // status wajib dan hanya boleh disetujui/ditolak
             'status' => 'required|in:disetujui,ditolak',
             // notes wajib jika status = ditolak
-            'notes' => 'required_if:status,ditolak',
+            'komentar' => 'required_if:status,ditolak',
         ];
         $request->validate($rules);
 
         // Cari data surat di tabel surat_aktif_kuliah dari model StudentActiveLetter 
-        $letter = StudentActiveLetter::with([
+        $letter = SuratAktif::with([
             'adminValidation',
             'advisorSignature',
             'headOfProgramSignature',
@@ -217,7 +217,7 @@ class StudentActiveLetterController extends Controller
 
         // Jika belum ada tanda tangan dari orang yang login sekarang, buat tanda tangan baru
         if (!$signature) {
-            $signature = new LetterSignature();
+            $signature = new ValidasiSurat();
             $signature->id = Str::uuid();
             // Kasih tau: ini ttd buat surat yang mana (submission_id)
             $signature->submission_id = $letter->id;
@@ -229,7 +229,7 @@ class StudentActiveLetterController extends Controller
         // Contohnya: kalau ✅ Disetujui → status-nya jadi 'disetujui', kalau ❌ Ditolak → status-nya jadi 'ditolak'
         $signature->status = $request->status;
         // Isi kolom notes pakai teks alasan yang ditulis user, kalau surat ditolak
-        $signature->notes = $request->notes;
+        $signature->komentar = $request->komentar;
 
         // Kalau status-nya disetujui, tambahin shortcode (buat QR Code)
         if ($request->status === 'disetujui') {
@@ -241,20 +241,20 @@ class StudentActiveLetterController extends Controller
 
     // Kalau yang login adalah Admin (role = 6), dan dia barusan menyetujui surat, dan surat itu belum punya nomor...
     // 🎯 Maka: saatnya kasih nomor surat!
-    if ($userRole == 6 && $request->status === 'disetujui' && !$letter->letter_number) {
+    if ($userRole == 6 && $request->status === 'disetujui' && !$letter->no_surat) {
         // buat penomoran surat berdasarkan tahun sekarang
         $currentYear = date('Y');
-        // Ambil kode surat dari letter_number kolom code
-        $code = $request->letter_number['code'];
+        // Ambil kode surat dari no_surat kolom kode
+        $code = $request->no_surat['kode'];
         // Cek: apakah user ngisi nomor surat manual? Kalau ya, simpan ke $manualNumber. Kalau nggak, isinya null
-        $manualNumber = $request->letter_number['number'] ?? null;
+        $manualNumber = $request->no_surat['nomor'] ?? null;
 
     // 🔎 Validasi: Pastikan nomor surat tidak duplikat jika user isi manual
     if ($manualNumber) {
         // cek ke database: ada gak nomor surat yang tahun & kode & angkanya sama kayak yg diinput user?
-        $exists = LetterNumber::where('year', $currentYear)
-            ->where('code', $code)
-            ->where('number', $manualNumber)
+        $exists = NomorSurat::where('tahun', $currentYear)
+            ->where('kode', $code)
+            ->where('nomor', $manualNumber)
             ->exists();
 
         // Kalau nomor itu udah dipakai, jangan lanjut. Balikin ke halaman edit, dan kasih pesan error:
@@ -265,37 +265,37 @@ class StudentActiveLetterController extends Controller
     }
 
     // 🔢 Generate data nomor surat (pakai manual jika ada)
-    $data = LetterNumber::generateNextLetterNumber($currentYear, $code, $manualNumber);
+    $data = NomorSurat::generateNextLetterNumber($currentYear, $code, $manualNumber);
 
     // 🔗 Hubungkan ke surat
     $data['letter_id'] = $letter->id;
 
     // 💾 Simpan ke database
-    LetterNumber::create($data);
+    NomorSurat::create($data);
 
     // 🔁 Update surat dengan ID letter_number (kasih tau ke surat: “eh surat, ini ID nomor surat kamu ya!)
-    $letter->letter_number = $data['id'];
+    $letter->no_surat = $data['id'];
     $letter->save();
 }
 
         // Kalau surat di validasi Admin, maka simpan ID validasi Admin ke surat-nya
-        if ($userRole == 6 && !$letter->admin_validation_id) {
-            $letter->admin_validation_id = $signature->id;
+        if ($userRole == 6 && !$letter->id_validasi_admin) {
+            $letter->id_validasi_admin = $signature->id;
             $letter->save();
         }
 
-        if ($userRole == 46 && !$letter->advisor_signature_id) {
-            $letter->advisor_signature_id = $signature->id;
+        if ($userRole == 46 && !$letter->id_validasi_pa) {
+            $letter->id_validasi_pa = $signature->id;
             $letter->save();
         }
 
-        if ($userRole == 3000 && !$letter->head_of_program_signature_id) {
-            $letter->head_of_program_signature_id = $signature->id;
+        if ($userRole == 3000 && !$letter->id_validasi_kaprodi) {
+            $letter->id_validasi_kaprodi = $signature->id;
             $letter->save();
         }
 
-        if ($userRole == 3001 && !$letter->head_of_department_signature_id) {
-            $letter->head_of_department_signature_id = $signature->id;
+        if ($userRole == 3001 && !$letter->id_validasi_kajur) {
+            $letter->id_validasi_kajur = $signature->id;
             $letter->save();
         }
 
@@ -322,7 +322,7 @@ class StudentActiveLetterController extends Controller
         $generatedPDF->save($tempPath);
 
         // Ambil path file dokumen pendukung yang disimpan di kolom supporting_document
-        $supportingFile = $data->supporting_document;
+        $supportingFile = $data->dokumen;
         $relativePath = str_replace('public/', '', $supportingFile);
         $supportingPath = storage_path('app/public/' . $relativePath);
 
@@ -358,7 +358,7 @@ class StudentActiveLetterController extends Controller
     private function getLetterByDecryptedId($id)
     {
         $decryptedId = Crypt::decrypt($id);
-        return StudentActiveLetter::with([
+        return SuratAktif::with([
             'letterNumber',
             'adminValidation',
             'advisorSignature',
@@ -369,17 +369,17 @@ class StudentActiveLetterController extends Controller
 
     private function attachAcademicAdvisorInfo(&$data)
     {
-        if (strlen($data->academic_advisor) === 36) {
+        if (strlen($data->dosen_pa) === 36) {
             $sdm = DB::table('pdrd.sdm')
-                ->where('id_sdm', $data->academic_advisor)
+                ->where('id_sdm', $data->dosen_pa)
                 ->select('nm_sdm', 'nip')
                 ->first();
 
-            $data->academic_advisor_name = $sdm->nm_sdm ?? '';
-            $data->academic_advisor_nip = $sdm->nip ?? null;
+            $data->dosen_pa_nama = $sdm->nm_sdm ?? '';
+            $data->dosen_pa_nip = $sdm->nip ?? null;
         } else {
-            $data->academic_advisor_name = null;
-            $data->academic_advisor_nip = null;
+            $data->dosen_pa_nama = null;
+            $data->dosen_pa_nip = null;
         }
     }
 

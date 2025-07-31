@@ -24,7 +24,7 @@ class LetterSignature extends AbstractionModel
         'status',
         'short_code',
         'created_by',        // id_creator
-        'created_at',        // tgl_create
+        'tgl_create',        // tgl_create
         'updated_by',        // id_updater
         'updated_at',        // last_update
         'soft_delete',       // soft_delete
@@ -60,7 +60,7 @@ class LetterSignature extends AbstractionModel
             if ($sdm) {
                 $model->created_by = $sdm->id_sdm;
             }
-            $model->created_at = now();
+            $model->tgl_create = now();
             $model->last_sync = now();
         });
 

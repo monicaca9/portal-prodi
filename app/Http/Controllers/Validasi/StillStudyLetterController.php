@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Validasi;
 
 use App\Http\Controllers\Controller;
-use App\Models\SuratMasihKuliah\StillStudyLetter;
-use App\Models\SuratMasihKuliah\NumberLetter;
-use App\Models\SuratMasihKuliah\SignatureLetter;
+use App\Models\SuratMasihKuliah\SuratMasih;
+use App\Models\SuratMasihKuliah\NomorSurat;
+use App\Models\SuratMasihKuliah\ValidasiSurat;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Auth;
@@ -28,11 +28,11 @@ class StillStudyLetterController extends Controller
             ? auth()->user()->id_sdm_pengguna
             : (request()->get('id_sdm_pengguna') ?? Str::uuid());
 
-        $query = StillStudyLetter::query();
+        $query = SuratMasih::query();
 
         if ($userRole == 46) {
             $query->where('status', '!=', 'dibuat')
-                ->where('academic_advisor', $userId);
+                ->where('dosen_pa', $userId);
         } elseif ($userRole == 6) {
             // $query->where('status', '!=', 'dibuat');
 
@@ -51,14 +51,14 @@ class StillStudyLetterController extends Controller
             $query->where('status', '!=', 'dibuat');
         }
 
-        $stillStudyLetters = $query->latest()->get();
+        $stillStudyLetters = $query->orderBy('id', 'desc')->get();
 
         foreach ($stillStudyLetters as $letter) {
             $disable = match ($userRole) {
-                6     => $letter->admin_validation_id,
-                46 => $letter->advisor_signature_id,
-                3000  => $letter->head_of_program_signature_id,
-                3001  => $letter->head_of_department_signature_id,
+                6     => $letter->id_validasi_admin,
+                46 => $letter->id_validasi_pa,
+                3000  => $letter->id_validasi_kaprodi,
+                3001  => $letter->id_validasi_kajur,
                 default => false,
             };
             $letter->disable_validation_button = $disable;
@@ -69,42 +69,42 @@ class StillStudyLetterController extends Controller
 
     public function history(Request $request)
     {
-        $query = StillStudyLetter::where('status', '!=', 'dibuat');
+        $query = SuratMasih::where('status', '!=', 'dibuat');
 
         if ($request->filled('created_start')) {
-            $query->whereDate('created_at', '>=', $request->created_start);
+            $query->whereDate('tgl_create', '>=', $request->created_start);
         }
 
         if ($request->filled('created_end')) {
-            $query->whereDate('created_at', '<=', $request->created_end);
+            $query->whereDate('tgl_create', '<=', $request->created_end);
         }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        $stillStudyLetters = $query->latest()->get();
+        $stillStudyLetters = $query->orderBy('id', 'desc')->get();
 
         return view('validasi.surat_masih_kuliah.history', compact('stillStudyLetters'));
     }
 
     public function exportExcel(Request $request)
     {
-        $query = StillStudyLetter::where('status', '!=', 'dibuat');
+        $query = SuratMasih::where('status', '!=', 'dibuat');
 
         if ($request->filled('created_start')) {
-            $query->whereDate('created_at', '>=', $request->created_start);
+            $query->whereDate('tgl_create', '>=', $request->created_start);
         }
 
         if ($request->filled('created_end')) {
-            $query->whereDate('created_at', '<=', $request->created_end);
+            $query->whereDate('tgl_create', '<=', $request->created_end);
         }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        $stillStudyLetters = $query->latest()->get();
+        $stillStudyLetters = $query->orderBy('id', 'desc')->get();
 
         return Excel::download(new StillStudyLetterExport($stillStudyLetters), 'riwayat_surat_masih_kuliah.xlsx');
     }
@@ -112,21 +112,21 @@ class StillStudyLetterController extends Controller
     public function edit($id)
     {
         $decryptedId = Crypt::decrypt($id);
-        $data = StillStudyLetter::with('numberLetter')->where('id', $decryptedId)->first();
+        $data = SuratMasih::with('letterNumber')->where('id', $decryptedId)->first();
 
         $defaultCode = 'UN26.15.07/KM';
         $defaultYear = date('Y');
 
-        $code = $data->numberLetter->code ?? $defaultCode;
-        $year = $data->numberLetter->year ?? $defaultYear;
+        $code = $data->letterNumber->kode ?? $defaultCode;
+        $year = $data->letterNumber->tahun ?? $defaultYear;
 
-        $nextNumber = $data->numberLetter->number ?? NumberLetter::where('year', $year)
-            ->where('code', $code)
-            ->orderBy('number', 'desc')
-            ->value('number') + 1 ?? 1;
+        $nextNumber = $data->letterNumber->nomor ?? NomorSurat::where('tahun', $year)
+            ->where('kode', $code)
+            ->orderBy('nomor', 'desc')
+            ->value('nomor') + 1 ?? 1;
 
-        $stillStudyLetters = StillStudyLetter::where('student_number', $data->student_number)
-        ->orderBy('created_at', 'desc')
+        $stillStudyLetters = SuratMasih::where('npm', $data->npm)
+        ->orderBy('tgl_create', 'desc')
         ->get();
 
         return view('validasi.surat_masih_kuliah.edit', compact('data', 'code', 'year', 'nextNumber', 'stillStudyLetters'));
@@ -149,16 +149,16 @@ class StillStudyLetterController extends Controller
 
         $rules = [
             'status' => 'required|in:disetujui,ditolak',
-            'notes' => 'required_if:status,ditolak',
+            'komentar' => 'required_if:status,ditolak',
         ];
         $request->validate($rules);
 
-        $letter = StillStudyLetter::with([
+        $letter = SuratMasih::with([
             'adminValidation',
             'advisorSignature',
             'headOfProgramSignature',
             'headOfDepartmentSignature',
-            'numberLetter',
+            'letterNumber',
         ])->findOrFail($decryptedId);
 
         $signature = match ($userRole) {
@@ -170,14 +170,14 @@ class StillStudyLetterController extends Controller
         };
 
         if (!$signature) {
-            $signature = new SignatureLetter();
+            $signature = new ValidasiSurat();
             $signature->id = Str::uuid();
             $signature->submission_id = $letter->id;
             $signature->role = $userRole;
         }
 
         $signature->status = $request->status;
-        $signature->notes = $request->notes;
+        $signature->komentar = $request->komentar;
 
         if ($request->status === 'disetujui') {
             $signature->short_code = Str::random(10);
@@ -185,16 +185,16 @@ class StillStudyLetterController extends Controller
 
         $signature->save();
 
-    if ($userRole == 6 && $request->status === 'disetujui' && !$letter->letter_number) {
+    if ($userRole == 6 && $request->status === 'disetujui' && !$letter->no_surat) {
         $currentYear = date('Y');
-        $code = $request->letter_number['code'];
-        $manualNumber = $request->letter_number['number'] ?? null;
+        $code = $request->no_surat['kode'];
+        $manualNumber = $request->no_surat['nomor'] ?? null;
 
     // 🔎 Validasi: Pastikan nomor surat tidak duplikat jika user isi manual
     if ($manualNumber) {
-        $exists = NumberLetter::where('year', $currentYear)
-            ->where('code', $code)
-            ->where('number', $manualNumber)
+        $exists = NomorSurat::where('tahun', $currentYear)
+            ->where('kode', $code)
+            ->where('nomor', $manualNumber)
             ->exists();
 
         if ($exists) {
@@ -204,42 +204,41 @@ class StillStudyLetterController extends Controller
     }
 
     // 🔢 Generate data nomor surat (pakai manual jika ada)
-    $data = NumberLetter::generateNextLetterNumber($currentYear, $code, $manualNumber);
+    $data = NomorSurat::generateNextLetterNumber($currentYear, $code, $manualNumber);
 
     // 🔗 Hubungkan ke surat
     $data['letter_id'] = $letter->id;
 
     // 💾 Simpan ke database
-    NumberLetter::create($data);
+    NomorSurat::create($data);
 
     // 🔁 Update surat dengan ID letter_number
-    $letter->letter_number = $data['id'];
+    $letter->no_surat = $data['id'];
     $letter->save();
 }
 
 
-        if ($userRole == 6 && !$letter->admin_validation_id) {
-            $letter->admin_validation_id = $signature->id;
+        if ($userRole == 6 && !$letter->id_validasi_admin) {
+            $letter->id_validasi_admin = $signature->id;
             $letter->save();
         }
 
-        if ($userRole == 46 && !$letter->advisor_signature_id) {
-            $letter->advisor_signature_id = $signature->id;
+        if ($userRole == 46 && !$letter->id_validasi_pa) {
+            $letter->id_validasi_pa = $signature->id;
             $letter->save();
         }
 
-        if ($userRole == 3000 && !$letter->head_of_program_signature_id) {
-            $letter->head_of_program_signature_id = $signature->id;
+        if ($userRole == 3000 && !$letter->id_validasi_kaprodi) {
+            $letter->id_validasi_kaprodi = $signature->id;
             $letter->save();
         }
 
-        if ($userRole == 3001 && !$letter->head_of_department_signature_id) {
-            $letter->head_of_department_signature_id = $signature->id;
+        if ($userRole == 3001 && !$letter->id_validasi_kajur) {
+            $letter->id_validasi_kajur = $signature->id;
             $letter->save();
         }
 
         $letter->updateStatusBasedOnSignatures();
-        StillStudyLetter::find($decryptedId);
 
         return redirect()->route('validasi.surat_masih_kuliah', ['id' => $id])
             ->with('success', 'Data berhasil divalidasi.');
@@ -256,12 +255,12 @@ class StillStudyLetterController extends Controller
         $generatedPDF->save($tempPath);
 
         // 2. Ambil dokumen pendukung 1
-        $supportingFile1 = $data->supporting_document;
+        $supportingFile1 = $data->dokumen;
         $relativePath1 = str_replace('public/', '', $supportingFile1);
         $supportingPath1 = storage_path('app/public/' . $relativePath1);
 
         // 3. Ambil dokumen pendukung 2
-        $supportingFile2 = $data->supporting_document2;
+        $supportingFile2 = $data->dokumen2;
         $relativePath2 = str_replace('public/', '', $supportingFile2);
         $supportingPath2 = storage_path('app/public/' . $relativePath2);
 
@@ -297,8 +296,8 @@ class StillStudyLetterController extends Controller
     private function getLetterByDecryptedId($id)
     {
         $decryptedId = Crypt::decrypt($id);
-        return StillStudyLetter::with([
-            'numberLetter',
+        return SuratMasih::with([
+            'letterNumber',
             'adminValidation',
             'advisorSignature',
             'headOfProgramSignature',
@@ -308,17 +307,17 @@ class StillStudyLetterController extends Controller
 
     private function attachAcademicAdvisorInfo(&$data)
     {
-        if (strlen($data->academic_advisor) === 36) {
+        if (strlen($data->dosen_pa) === 36) {
             $sdm = DB::table('pdrd.sdm')
-                ->where('id_sdm', $data->academic_advisor)
+                ->where('id_sdm', $data->dosen_pa)
                 ->select('nm_sdm', 'nip')
                 ->first();
 
-            $data->academic_advisor_name = $sdm->nm_sdm ?? '';
-            $data->academic_advisor_nip = $sdm->nip ?? null;
+            $data->dosen_pa_nama = $sdm->nm_sdm ?? '';
+            $data->dosen_pa_nip = $sdm->nip ?? null;
         } else {
-            $data->academic_advisor_name = null;
-            $data->academic_advisor_nip = null;
+            $data->dosen_pa_nama = null;
+            $data->dosen_pa_nip = null;
         }
     }
 

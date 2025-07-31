@@ -20,19 +20,19 @@
         <table style="width: 100%; border-collapse: separate; border-spacing: 0 10px;">
             <tr>
                 <td style="width: 24%;">Nama</td>
-                <td>: {{ $data->name }}</td>
+                <td>: {{ $data->nama }}</td>
             </tr>
             <tr>
                 <td>NPM</td>
-                <td>: {{ $data->student_number }}</td>
+                <td>: {{ $data->npm }}</td>
             </tr>
             <tr>
                 <td>Jurusan</td>
-                <td>: {{ $data->department }}</td>
+                <td>: {{ $data->jurusan }}</td>
             </tr>
             <tr>
                 <td>Program Studi</td>
-                <td>: {{ $data->study_program }}</td>
+                <td>: {{ $data->prodi }}</td>
             </tr>
             <tr>
                 <td>Semester</td>
@@ -40,17 +40,17 @@
             </tr>
             <tr>
                 <td>Tahun Ajaran</td>
-                <td>: {{ $data->academic_year }}</td>
+                <td>: {{ $data->thn_akademik }}</td>
             </tr>
             <tr>
                 <td>Alamat</td>
-                <td>: {{ $data->address }}</td>
+                <td>: {{ $data->alamat }}</td>
             </tr>
         </table>
 
         <p style="padding-top: 20px;">
             Bersama dengan surat permohonan ini kami mengajukan syarat untuk dapat dibuatkan Surat Pengantar Aktif
-            Kuliah ke Wakil Dekan Bid.Kemahasiswaan dan Alumni untuk dipergunakan sebagai syarat {{ $data->purpose }}.
+            Kuliah ke Wakil Dekan Bid.Kemahasiswaan dan Alumni untuk dipergunakan sebagai syarat {{ $data->tujuan }}.
         </p>
 
         <p>Demikian surat permohonan ini saya buat, atas perhatiannya saya ucapkan terima kasih.</p>
@@ -81,10 +81,10 @@
                             </td>
                         </tr>
                         <tr>
-                            <td>{{ $data->academic_advisor_name ?? '' }}</td>
+                            <td>{{ $data->dosen_pa_nama ?? '' }}</td>
                         </tr>
                         <tr>
-                            <td>NIP. {{ $data->academic_advisor_nip ?? '..............' }}</td>
+                            <td>NIP. {{ $data->dosen_pa_nip ?? '..............' }}</td>
                         </tr>
                     </table>
                 </td>
@@ -93,30 +93,30 @@
                 <td style="width: 40%; text-align: left;">
                     <table style="width: 100%; text-align: left;">
                         <tr>
-                            <td>Bandar Lampung, {{ tglIndonesia($data->created_at) }}</td>
+                            <td>Bandar Lampung, {{ tglIndonesia($data->tgl_create) }}</td>
                         </tr>
                         <tr>
                             <td>Pemohon (Mahasiswa)</td>
                         </tr>
                         <tr>
                             <td style="height: 80px;">
-                                @if ($data->signature && file_exists(public_path('storage/' . str_replace('public/', '', $data->signature))))
+                                @if ($data->validasi && file_exists(public_path('storage/' . str_replace('public/', '', $data->validasi))))
                                     @php
-                                        $path = public_path('storage/' . str_replace('public/', '', $data->signature));
+                                        $path = public_path('storage/' . str_replace('public/', '', $data->validasi));
                                         $type = pathinfo($path, PATHINFO_EXTENSION);
                                         $data_img = base64_encode(file_get_contents($path));
                                         $src = "data:image/$type;base64,$data_img";
                                     @endphp
-                                    <img src="{{ $src }}" alt="Signature" style="height: 80px;">
+                                    <img src="{{ $src }}" alt="Validasi" style="height: 80px;">
                                 @endif
 
                             </td>
                         </tr>
                         <tr>
-                            <td>{{ $data->name }}</td>
+                            <td>{{ $data->nama }}</td>
                         </tr>
                         <tr>
-                            <td>NPM. {{ $data->student_number }}</td>
+                            <td>NPM. {{ $data->npm }}</td>
                         </tr>
                     </table>
                 </td>
@@ -146,8 +146,8 @@
                     </tr>
                     <tr>
                         <td style=" text-align: left;">
-                            @if (!empty($data->signature->createdBySdm->nm_sdm))
-                                {{ $data->signature->createdBySdm->nm_sdm }}
+                            @if (!empty($data->validasi->createdBySdm->nm_sdm))
+                                {{ $data->validasi->createdBySdm->nm_sdm }}
                             @else
                                 Yessi Mulyani, S.T., M.T.
                             @endif
@@ -156,8 +156,8 @@
                     </tr>
                     <tr>
                         <td style=" text-align: left;">
-                            @if (!empty($data->signature->createdBySdm->nip))
-                                {{ $data->signature->createdBySdm->nip }}
+                            @if (!empty($data->validasi->createdBySdm->nip))
+                                {{ $data->validasi->createdBySdm->nip }}
                             @else
                                 NIP 197312262000122001
                             @endif

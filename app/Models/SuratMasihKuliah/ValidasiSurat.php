@@ -4,15 +4,15 @@ namespace App\Models\SuratMasihKuliah;
 
 use App\Models\AbstractionModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Models\SuratMasihKuliah\StillStudyLetter;
+use App\Models\SuratMasihKuliah\SuratMasih;
 use App\Models\ManAkses\Peran;
 use App\Models\Pdrd\Sdm;
 
-class SignatureLetter extends AbstractionModel
+class ValidasiSurat extends AbstractionModel
 {
     use HasFactory;
 
-    protected $table = 'surat_masih.signature_letter';
+    protected $table = 'surat_masih.validasi_surat';
     protected $primaryKey = 'id';
     protected $keyType = 'string';
 
@@ -20,32 +20,34 @@ class SignatureLetter extends AbstractionModel
         'id',
         'submission_id',
         'role',
-        'notes',
+        'komentar',
         'status',
         'short_code',
         // Kolom baru sesuai standar lama:
-        'created_by',        // id_creator
+        'id_creator',        // id_creator
         'tgl_create',        // tgl_create
-        'updated_by',        // id_updater
-        'updated_at',        // last_update
+        'last_update',        
+        'updated_at',
+        'updated_by',
         'soft_delete',       // soft_delete
         'last_sync',         // last_sync
     ];
 
+    const CREATED_AT = 'tgl_create';
 
     public function stillStudyLetter()
     {
-        return $this->belongsTo(StillStudyLetter::class, 'submission_id', 'id');
+        return $this->belongsTo(SuratMasih::class, 'submission_id', 'id');
     }
 
     protected $casts = [
-        'created_by' => 'string',
+        'id_creator' => 'string',
         'updated_by' => 'string',
     ];
 
     public function createdBySdm()
 {
-    return $this->belongsTo(Sdm::class, 'created_by', 'id_sdm');
+    return $this->belongsTo(Sdm::class, 'id_creator', 'id_sdm');
 }
 
 
@@ -59,7 +61,7 @@ class SignatureLetter extends AbstractionModel
             $sdm = Sdm::where('id_sdm', auth()->user()->id_sdm_pengguna)->first();
 
             if ($sdm) {
-                $model->created_by = $sdm->id_sdm;
+                $model->id_creator = $sdm->id_sdm;
             }
             $model->tgl_create = now();
             $model->last_sync = now();
@@ -71,7 +73,7 @@ class SignatureLetter extends AbstractionModel
             if ($sdm) {
                 $model->updated_by = $sdm->id_sdm;
             }
-            $model->updated_at = now();
+            $model->last_update = now();
             $model->last_sync = now();
         });
     }

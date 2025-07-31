@@ -10,19 +10,19 @@
                     {{ $profile->nm_pd . ' (' . $profile->nim . ')' }}</h3>
             </div>
             <div class="card-body">
-                {!! FormInputText('name', 'Nama Lengkap', 'text', $data->name, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
-                {!! FormInputText('student_number', 'NPM', 'number', $data->student_number, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
-                {!! FormInputText('department', 'Jurusan', 'text', $data->department, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
-                {!! FormInputText('study_program', 'Program Studi', 'text', $data->study_program, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
-                {!! FormInputText('academic_year', 'Tahun Akademik', 'text', $currentAcademicYear, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
+                {!! FormInputText('nama', 'Nama Lengkap', 'text', $data->nama, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
+                {!! FormInputText('npm', 'NPM', 'number', $data->npm, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
+                {!! FormInputText('jurusan', 'Jurusan', 'text', $data->jurusan, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
+                {!! FormInputText('prodi', 'Program Studi', 'text', $data->prodi, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
+                {!! FormInputText('thn_akademik', 'Tahun Akademik', 'text', $academicYear, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
                 {!! FormInputText('semester', 'Semester', 'text', $data->semester, ['required' => true, 'readonly' => true, 'class' => 'no-click']) !!}
-                
-                {!! FormInputText('phone_number', 'Nomor Whatsapp', 'number', $data->phone_number, ['required' => true]) !!}
-                {!! FormInputText('address', 'Alamat', 'text', $data->address, ['required' => true]) !!}
-                {!! FormInputText('purpose', 'Keperluan', 'text', $data->purpose, ['required' => true]) !!}
-                {!! FormInputText('parent_name', 'Nama Wali', 'text', $data->parent_name, ['required' => true]) !!}
+
+                {!! FormInputText('no_hp', 'Nomor Whatsapp', 'number', $data->no_hp, ['required' => true]) !!}
+                {!! FormInputText('alamat', 'Alamat', 'text', $data->alamat, ['required' => true]) !!}
+                {!! FormInputText('tujuan', 'Keperluan', 'text', $data->tujuan, ['required' => true]) !!}
+                {!! FormInputText('nama_ortu', 'Nama Wali', 'text', $data->nama_ortu, ['required' => true]) !!}
                 <div class="form-group row">
-    <label for="parent_grade" class="col-sm-2 col-form-label">
+    <label for="pangkat_ortu" class="col-sm-2 col-form-label">
         NIP <span style="color:red;">*</span><br>
         <span style="font-size: 0.8em; color: #888;">
             <em>(Isi - jika tidak ada)</em>
@@ -31,15 +31,15 @@
     <div class="col-sm-10">
         <input 
             type="text" 
-            name="parent_nip" 
-            id="parent_nip" 
-            class="form-control{{ $errors->has('parent_nip') ? ' is-invalid' : '' }}" 
-            value="{{ old('parent_nip', $data->parent_nip) }}" 
+            name="nip_ortu" 
+            id="nip_ortu" 
+            class="form-control{{ $errors->has('nip_ortu') ? ' is-invalid' : '' }}" 
+            value="{{ old('nip_ortu', $data->nip_ortu) }}" 
             placeholder="NIP" 
             required>
-        @if ($errors->has('parent_nip'))
+        @if ($errors->has('nip_ortu'))
             <div class="invalid-feedback">
-                {{ $errors->first('parent_nip') }}
+                {{ $errors->first('nip_ortu') }}
             </div>
         @endif
     </div>
@@ -47,7 +47,7 @@
 
 
                 <div class="form-group row">
-    <label for="parent_grade" class="col-sm-2 col-form-label">
+    <label for="pangkat_ortu" class="col-sm-2 col-form-label">
         Pangkat/Gol. <span style="color:red;">*</span><br>
         <span style="font-size: 0.8em; color: #888;">
             <em>(Isi - jika tidak ada)</em>
@@ -56,22 +56,22 @@
     <div class="col-sm-10">
         <input 
             type="text" 
-            name="parent_grade" 
-            id="parent_grade" 
-            class="form-control{{ $errors->has('parent_grade') ? ' is-invalid' : '' }}" 
-            value="{{ old('parent_grade', $data->parent_grade) }}" 
+            name="pangkat_ortu" 
+            id="pangkat_ortu" 
+            class="form-control{{ $errors->has('pangkat_ortu') ? ' is-invalid' : '' }}" 
+            value="{{ old('pangkat_ortu', $data->pangkat_ortu) }}" 
             placeholder="Pangkat/Gol." 
             required>
-        @if ($errors->has('parent_grade'))
+        @if ($errors->has('pangkat_ortu'))
             <div class="invalid-feedback">
-                {{ $errors->first('parent_grade') }}
+                {{ $errors->first('pangkat_ortu') }}
             </div>
         @endif
     </div>
 </div>
-                {!! FormInputText('parent_job', 'Pekerjaan', 'text', $data->parent_job, ['required' => true]) !!}
-                {!! FormInputText('parent_institution', 'Instansi/Tempat Kerja', 'text', $data->parent_institution, ['required' => true]) !!}
-                {!! FormInputText('parent_address', 'Alamat Wali', 'text', $data->parent_address, ['required' => true]) !!}
+                {!! FormInputText('pekerjaan_ortu', 'Pekerjaan', 'text', $data->pekerjaan_ortu, ['required' => true]) !!}
+                {!! FormInputText('instansi_ortu', 'Instansi/Tempat Kerja', 'text', $data->instansi_ortu, ['required' => true]) !!}
+                {!! FormInputText('alamat_ortu', 'Alamat Wali', 'text', $data->alamat_ortu, ['required' => true]) !!}
                 <div class="form-group row">
                     <label for="signature-pad" class="col-sm-2 col-form-label">
                         Tanda Tangan <span style="color:red;">*</span>
@@ -83,12 +83,12 @@
                 <button type="button" class="btn btn-secondary btn-sm mt-2" onclick="clearPad()">Bersihkan</button>
 
                 <!-- Hidden input untuk menyimpan base64 -->
-                <input type="hidden" name="signature" id="signature">
+                <input type="hidden" name="validasi" id="validasi">
         
                 <!-- Validasi error -->
-                @if ($errors->has('signature'))
+                @if ($errors->has('validasi'))
                     <div class="invalid-feedback d-block">
-                        {{ $errors->first('signature') }}
+                        {{ $errors->first('validasi') }}
                     </div>
                 @endif
             </div>
@@ -127,56 +127,56 @@
 
                 function clearPad() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                document.getElementById('signature').value = "";
+                document.getElementById('validasi').value = "";
                 }
 
             // Saat form disubmit, isi input hidden dengan base64 dari canvas
             document.querySelector('form').addEventListener('submit', function () {
             const dataURL = canvas.toDataURL('image/png');
-            document.getElementById('signature').value = dataURL;
+            document.getElementById('validasi').value = dataURL;
             });
         </script>
                 <div class="form-group row">
-                    <label for="supporting_document" class="col-sm-2 col-form-label">
+                    <label for="dokumen" class="col-sm-2 col-form-label">
                     Slip UKT Terakhir <span style="color:red;">*</span><br>
                     <span style="font-size: 0.8em; color: #888;">
                     <em>(Format file .pdf <br> Max. ukuran file 2MB)</em>
                     </span>
                      </label>
                     <div class="col-sm-10">
-                        <input type="file" name="supporting_document" id="supporting_document" class="form-control"
+                        <input type="file" name="dokumen" id="dokumen" class="form-control"
                             accept="application/pdf" required>
-                        @if ($errors->has('supporting_document'))
+                        @if ($errors->has('dokumen'))
                             <div class="invalid-feedback">
-                                {{ $errors->first('supporting_document') }}
+                                {{ $errors->first('dokumen') }}
                             </div>
                         @endif
                     </div>
                 </div>
                 <div class="form-group row">
-                    <label for="supporting_document2" class="col-sm-2 col-form-label">
+                    <label for="dokumen2" class="col-sm-2 col-form-label">
                         KP4 Orang Tua (PNS aktif) atau<br>SK Pensiun (pensiun PNS) atau<br>Surat Keterangan Kerja Orang Tua (Swasta) <span style="color:red;">*</span><br>
                     <span style="font-size: 0.8em; color: #888;">
                     <em>(Format file .pdf <br> Max. ukuran file 2MB)</em>
                     </span>
                      </label>
                     <div class="col-sm-10">
-                        <input type="file" name="supporting_document2" id="supporting_document2" class="form-control"
+                        <input type="file" name="dokumen2" id="dokumen2" class="form-control"
                             accept="application/pdf" required>
-                        @if ($errors->has('supporting_document2'))
+                        @if ($errors->has('dokumen2'))
                             <div class="invalid-feedback">
-                                {{ $errors->first('supporting_document2') }}
+                                {{ $errors->first('dokumen2') }}
                             </div>
                         @endif
                     </div>
                 </div>
                 {!! FormInputSelect(
-                    'academic_advisor',
+                    'dosen_pa',
                     'Pilih Dosen PA',
                     true,
                     true,
                     $academicAdvisors,
-                    $data->academic_advisor,
+                    $data->dosen_pa,
                 ) !!}
             </div>
 

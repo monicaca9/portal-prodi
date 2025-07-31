@@ -56,7 +56,7 @@ class StudentActiveLetterExport implements FromCollection, WithHeadings, WithMap
             $letter->name,
             $letter->student_number,
             'Surat Aktif Kuliah',
-            $letter->created_at ? \Carbon\Carbon::parse($letter->created_at)->format('d-m-Y') : '-',
+            $letter->tgl_create ? \Carbon\Carbon::parse($letter->tgl_create)->format('d-m-Y') : '-',
             $letter->status_updated_at instanceof \Carbon\Carbon
                 ? $letter->status_updated_at->format('d-m-Y')
                 : (is_string($letter->status_updated_at) || is_null($letter->status_updated_at)

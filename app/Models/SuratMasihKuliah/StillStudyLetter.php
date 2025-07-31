@@ -48,7 +48,7 @@ class StillStudyLetter extends AbstractionModel
         'letter_number',
         
         'created_by',        // id_creator
-        'created_at',        // tgl_create
+        'tgl_create',        // tgl_create
         'updated_by',        // id_updater
         'updated_at',        // last_update
         'soft_delete',       // soft_delete
@@ -169,9 +169,9 @@ class StillStudyLetter extends AbstractionModel
 
     public function getTimeDiffAttribute()
     {
-        if (!$this->created_at) return '-';
+        if (!$this->tgl_create) return '-';
 
-        $createdAt = \Carbon\Carbon::parse($this->created_at);
+        $createdAt = \Carbon\Carbon::parse($this->tgl_create);
         $diffInSeconds = now()->diffInSeconds($createdAt);
 
         if ($diffInSeconds < 3600) {
@@ -199,7 +199,7 @@ class StillStudyLetter extends AbstractionModel
         static::creating(function ($model) {
             $pesertaDidik = PesertaDidik::where('id_pd', auth()->user()->id_pd_pengguna)->first();
             $model->created_by = $pesertaDidik ? $pesertaDidik->id_pd : null;
-            $model->created_at = now();
+            $model->tgl_create = now();
             $model->last_sync = now();
         });
 

@@ -70,9 +70,9 @@
                             <tr>
                                 <td>{{ $no + 1 }}</td>
 
-                                <td>{{ $letter->purpose }}</td>
+                                <td>{{ $letter->tujuan }}</td>
 
-                                <td>{{ isset($letter->created_at) ? tglIndonesia($letter->created_at) : '-' }}</td>
+                                <td>{{ isset($letter->tgl_create) ? tglIndonesia($letter->tgl_create) : '-' }}</td>
 
                                 <td>{{ $letter->time_diff }}</td>
 
@@ -85,22 +85,22 @@
                                                 [
                                                     'label' => 'Validasi Dosen PA',
                                                     'data' => $letter->advisorSignature ?? null,
-                                                    'check' => $letter->advisor_signature_id,
+                                                    'check' => $letter->id_validasi_pa,
                                                 ],
                                                 [
                                                     'label' => 'Validasi Admin',
                                                     'data' => $letter->adminValidation ?? null,
-                                                    'check' => $letter->admin_validation_id,
+                                                    'check' => $letter->id_validasi_admin,
                                                 ],
                                                 [
                                                     'label' => 'Validasi Prodi',
                                                     'data' => $letter->headOfProgramSignature ?? null,
-                                                    'check' => $letter->head_of_program_signature_id,
+                                                    'check' => $letter->id_validasi_kaprodi,
                                                 ],
                                                 [
                                                     'label' => 'Validasi Kajur',
                                                     'data' => $letter->headOfDepartmentSignature ?? null,
-                                                    'check' => $letter->head_of_department_signature_id,
+                                                    'check' => $letter->id_validasi_kajur,
                                                 ],
                                             ];
                                         @endphp
@@ -108,7 +108,7 @@
                                         @foreach ($steps as $index => $step)
                                             @php
                                                 $status = $step['data']->status ?? null;
-                                                $time = $step['data']->created_at ?? '';
+                                                $time = $step['data']->tgl_create ?? '';
                                                 $color = is_null($step['check'])
                                                     ? 'gray'
                                                     : ($status === 'disetujui'
@@ -170,7 +170,7 @@
                                                 <div>Selesai</div>
                                                 @if (in_array($letter->status, ['selesai', 'ditolak']))
                                                     <div style="font-size: 0.85em; color: gray;">
-                                                        {{ $letter->updated_at }}
+                                                        {{ $letter->last_updated }}
                                                         @php
         $rejectedNotes = collect([
             $letter->adminValidation,
@@ -179,7 +179,7 @@
             $letter->headOfDepartmentSignature,
         ])
             ->filter(fn($signature) => $signature && $signature->status === 'ditolak')
-            ->pluck('notes')
+            ->pluck('komentar')
             ->filter()
             ->all();
     @endphp

@@ -6,46 +6,47 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\AbstractionModel;
 use App\Models\Pdrd\PesertaDidik;
-use App\Models\SuratAktifKuliah\LetterSignature;
+use App\Models\SuratAktifKuliah\ValidasiSurat;
 
-class StudentActiveLetter extends AbstractionModel
+class SuratAktif extends AbstractionModel
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'surat_aktif.student_active_letter';
+    protected $table = 'surat_aktif.surat_aktif';
     protected $primaryKey = 'id';
     public $incrementing = false;
     protected $keyType = 'string';
 
     protected $fillable = [
         'id',
-        'name',
-        'student_number',
-        'department',
-        'study_program',
+        'nama',
+        'npm',
+        'jurusan',
+        'prodi',
         'semester',
-        'academic_year',
-        'phone_number',
-        'address',
-        'purpose',
-        'signature',
-        'academic_advisor',
-        'supporting_document',
+        'thn_akademik',
+        'no_hp',
+        'alamat',
+        'tujuan',
+        'validasi',
+        'dosen_pa',
+        'dokumen',
         'status',
-        'admin_validation_id',
-        'advisor_signature_id',
-        'head_of_program_signature_id',
-        'head_of_department_signature_id',
-        'letter_number',
+        'id_validasi_admin',
+        'id_validasi_pa',
+        'id_validasi_kaprodi',
+        'id_validasi_kajur',
+        'no_surat',
         
-        'created_by',        // id_creator
-        'tgl_create',        // tgl_create
-        'updated_by',        // id_updater
-        'updated_at',        // last_update
+        'id_creator',        // created_by
+        'tgl_create',        // created_at
+        'last_update',        
+        'updated_at',
+        'updated_by',
         'soft_delete',       // soft_delete
         'last_sync',         // last_sync
     ];
-
+    const CREATED_AT = 'tgl_create';
     const STATUS_PENDING = 'menunggu';
     const STATUS_APPROVED = 'disetujui';
     const STATUS_REJECTED = 'ditolak';
@@ -54,39 +55,39 @@ class StudentActiveLetter extends AbstractionModel
 
     public function createdBy()
     {
-        return $this->belongsTo(PesertaDidik::class, 'created_by', 'id_pd');
+        return $this->belongsTo(PesertaDidik::class, 'id_creator', 'id_pd');
     }
 
     public function letterNumber()
     {
-        return $this->belongsTo(LetterNumber::class, 'letter_number', 'id');
+        return $this->belongsTo(NomorSurat::class, 'no_surat', 'id');
     }
 
 
-    // Ini bikin relasi hasOne antara tabel student_active_letter dan letter_signature.
+    // Ini bikin relasi hasOne antara tabel surat_aktif dan letter_signature.
     // Artinya: Satu surat punya satu tanda tangan validasi.
     // Dicari di tabel letter_signature yang submission_id sama dengan id surat, dan role harus 6 (kode role admin).
     public function adminValidation()
     {
-        return $this->hasOne(LetterSignature::class, 'submission_id', 'id')
+        return $this->hasOne(ValidasiSurat::class, 'submission_id', 'id')
             ->where('role', 6);
     }
 
     public function advisorSignature()
     {
-        return $this->hasOne(LetterSignature::class, 'submission_id', 'id')
+        return $this->hasOne(ValidasiSurat::class, 'submission_id', 'id')
             ->where('role', 46);
     }
 
     public function headOfProgramSignature()
     {
-        return $this->hasOne(LetterSignature::class, 'submission_id', 'id')
+        return $this->hasOne(ValidasiSurat::class, 'submission_id', 'id')
             ->where('role', 3000);
     }
 
     public function headOfDepartmentSignature()
     {
-        return $this->hasOne(LetterSignature::class, 'submission_id', 'id')
+        return $this->hasOne(ValidasiSurat::class, 'submission_id', 'id')
             ->where('role', 3001);
     }
 
@@ -197,7 +198,7 @@ class StudentActiveLetter extends AbstractionModel
     public function getStatusUpdatedAtAttribute()
     {
         if ($this->status === self::STATUS_APPROVED || $this->status === self::STATUS_REJECTED) {
-            return $this->updated_at ? \Carbon\Carbon::parse($this->updated_at)->format('Y-m-d H:i:s') : '-';
+            return $this->last_update ? \Carbon\Carbon::parse($this->last_update)->format('Y-m-d H:i:s') : '-';
         }
 
         return '-';
@@ -209,7 +210,7 @@ class StudentActiveLetter extends AbstractionModel
     {
         static::creating(function ($model) {
             $pesertaDidik = PesertaDidik::where('id_pd', auth()->user()->id_pd_pengguna)->first();
-            $model->created_by = $pesertaDidik ? $pesertaDidik->id_pd : null;
+            $model->id_creator = $pesertaDidik ? $pesertaDidik->id_pd : null;
             $model->tgl_create = now();
             $model->last_sync = now();
         });
@@ -217,7 +218,7 @@ class StudentActiveLetter extends AbstractionModel
         static::updating(function ($model) {
             $pesertaDidik = PesertaDidik::where('id_pd', auth()->user()->id_pd_pengguna)->first();
             $model->updated_by = $pesertaDidik ? $pesertaDidik->id_pd : null;
-            $model->updated_at = now();
+            $model->last_update = now();
             $model->last_sync = now();
         });
     }

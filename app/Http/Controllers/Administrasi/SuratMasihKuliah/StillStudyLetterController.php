@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Administrasi\SuratMasihKuliah;
 
 use App\Http\Controllers\Controller;
-use App\Models\SuratMasihKuliah\StillStudyLetter;
+use App\Models\SuratMasihKuliah\SuratMasih;
 use App\Models\Pdrd\PesertaDidik;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -19,8 +19,8 @@ class StillStudyLetterController extends Controller
 {
     public function index(PesertaDidik $pesertaDidik)
     {
-        $stillStudyLetters = StillStudyLetter::where('created_by', auth()->user()->id_pd_pengguna)
-            ->latest()
+        $stillStudyLetters = SuratMasih::where('id_creator', auth()->user()->id_pd_pengguna)
+            ->orderBy('id', 'desc')
             ->get();
         return view('administrasi.surat_masih_kuliah.index', compact('stillStudyLetters'));
     }
@@ -28,21 +28,21 @@ class StillStudyLetterController extends Controller
 
     public function history(Request $request, PesertaDidik $pesertaDidik)
     {
-        $query = StillStudyLetter::where('created_by', auth()->user()->id_pd_pengguna);
+        $query = SuratMasih::where('id_creator', auth()->user()->id_pd_pengguna);
 
         if ($request->filled('created_start')) {
-            $query->whereDate('created_at', '>=', $request->created_start);
+            $query->whereDate('tgl_create', '>=', $request->created_start);
         }
 
         if ($request->filled('created_end')) {
-            $query->whereDate('created_at', '<=', $request->created_end);
+            $query->whereDate('tgl_create', '<=', $request->created_end);
         }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        $stillStudyLetters = $query->latest()->get();
+        $stillStudyLetters = $query->orderBy('id', 'desc')->get();
 
         return view('administrasi.surat_masih_kuliah.history', compact('stillStudyLetters'));
     }
@@ -59,26 +59,26 @@ class StillStudyLetterController extends Controller
         $academicYear = $this->getCurrentAcademicYear();
         $semesterNumber = $this->calculateCurrentSemester($profile->tgl_masuk ?? now());
 
-        $data = new StillStudyLetter();
+        $data = new SuratMasih();
         $data->fill([
             'id'                => Str::uuid(),
-            'name'              => $profile->nm_pd,
-            'student_number'    => $profile->nim,
-            'department'        => $jurusan,       
-            'study_program'     => $profile->prodi,
+            'nama'              => $profile->nm_pd,
+            'npm'               => $profile->nim,
+            'jurusan'            => $jurusan,       
+            'prodi'             => $profile->prodi,
             'semester'          => $semesterNumber,
-            'academic_year'     => $academicYear,
-            'phone_number'      => $profile->tlpn_hp,
-            'address'           => $profile->jln,
-            'purpose'           => '',
-            'parent_name'       => $profile->nm_ayah,
-            'parent_nip'        => '',
-            'parent_grade'      => '',
-            'parent_job'        => $profile->nm_pekerjaan_ayah,
-            'parent_institution' => '',     
-            'parent_address'    => '',
-            'signature'         => '',
-            'academic_advisor'  => '',
+            'thn_akademik'     => $academicYear,
+            'no_hp'             => $profile->tlpn_hp,
+            'alamat'           => $profile->jln,
+            'tujuan'           => '',
+            'nama_ortu'       => $profile->nm_ayah,
+            'nip_ortu'        => '',
+            'pangkat_ortu'      => '',
+            'pekerjaan_ortu'     => $profile->nm_pekerjaan_ayah,
+            'instansi_ortu'     => '',     
+            'alamat_ortu'    => '',
+            'validasi'         => '',
+            'dosen_pa'         => '',
         ]);
 
         $studentId = $profile->id_pd ?? null;
@@ -87,39 +87,39 @@ class StillStudyLetterController extends Controller
         $semesters = []; 
         $currentAcademicYear = $this->getCurrentAcademicYear();
 
-        return view('administrasi.surat_masih_kuliah.create', compact('profile', 'data', 'academicAdvisors', 'semesters', 'currentAcademicYear'));
+        return view('administrasi.surat_masih_kuliah.create', compact('profile', 'data', 'academicAdvisors', 'semesters', 'academicYear'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'name'                 => 'required|string|max:100',
-            'student_number'       => 'required|max:10',
-            'department'           => 'required|string|max:100',
-            'study_program'        => 'required|string|max:100',
+            'nama'                 => 'required|string|max:100',
+            'npm'                  => 'required|max:10',
+            'jurusan'               => 'required|string|max:100',
+            'prodi'                  => 'required|string|max:100',
             'semester'             => 'required|max:20',
-            'academic_year'        => 'required|max:20',
-            'phone_number'         => 'required|max:15',
-            'address'              => 'required|string',
-            'purpose'              => 'required|string|max:255',
-            'parent_name'          => 'required|string|max:100',
-            'parent_nip'           => 'required|max:20',
-            'parent_grade'         => 'required|string|max:100',
-            'parent_job'           => 'required|string|max:100',
-            'parent_institution'   => 'required|string|max:100',
-            'parent_address'       => 'required|string',
-            'signature'            => 'required|string',
-            'academic_advisor'     => 'required|string|max:100',
-            'supporting_document'  => 'required|file|mimes:pdf|max:2048',
-            'supporting_document2' => 'required|file|mimes:pdf|max:2048',
+            'thn_akademik'        => 'required|max:20',
+            'no_hp'               => 'required|max:15',
+            'alamat'              => 'required|string',
+            'tujuan'              => 'required|string|max:255',
+            'nama_ortu'          => 'required|string|max:100',
+            'nip_ortu'           => 'required|max:20',
+            'pangkat_ortu'         => 'required|string|max:100',
+            'pekerjaan_ortu'      => 'required|string|max:100',
+            'instansi_ortu'     => 'required|string|max:100',
+            'alamat_ortu'       => 'required|string',
+            'validasi'            => 'required|string',
+            'dosen_pa'           => 'required|string|max:100',
+            'dokumen'            => 'required|file|mimes:pdf|max:2048',
+            'dokumen2'           => 'required|file|mimes:pdf|max:2048',
         ]);
 
         $signaturePath = null;
         $supportingDocumentPath = null;
 
         // Simpan signature dari base64
-    if ($request->signature && Str::startsWith($request->signature, 'data:image')) {
-        $imageData = $request->signature;
+    if ($request->validasi && Str::startsWith($request->validasi, 'data:image')) {
+        $imageData = $request->validasi;
         list($type, $imageData) = explode(';', $imageData);
         list(, $imageData) = explode(',', $imageData);
         $imageData = base64_decode($imageData);
@@ -133,29 +133,29 @@ class StillStudyLetterController extends Controller
 
     // Simpan dokumen pendukung 1
 $supportingDocumentPath = null;
-if ($request->hasFile('supporting_document')) {
-    $file = $request->file('supporting_document');
+if ($request->hasFile('dokumen')) {
+    $file = $request->file('dokumen');
     $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
     $supportingDocumentPath = $file->storeAs('public/supporting_documents', $filename);
 }
 
 // Simpan dokumen pendukung 2
 $supportingDocument2Path = null;
-if ($request->hasFile('supporting_document2')) {
-    $file2 = $request->file('supporting_document2');
+if ($request->hasFile('dokumen2')) {
+    $file2 = $request->file('dokumen2');
     $filename2 = time() . '_' . uniqid() . '.' . $file2->getClientOriginalExtension();
     $supportingDocument2Path = $file2->storeAs('public/supporting_documents2', $filename2);
 }
 
 // Simpan ke database
-$data = new StillStudyLetter();
+$data = new SuratMasih();
 $data->fill(array_merge(
-    $request->except(['signature', 'supporting_document', 'supporting_document2']),
+    $request->except(['validasi', 'dokumen', 'dokumen2']),
     [
         'id' => Str::uuid(),
-        'signature' => $signaturePath,
-        'supporting_document' => $supportingDocumentPath,
-        'supporting_document2' => $supportingDocument2Path,
+        'validasi' => $signaturePath,
+        'dokumen' => $supportingDocumentPath,
+        'dokumen2' => $supportingDocument2Path,
     ]
 ));
 $data->save();
@@ -176,13 +176,13 @@ $data->save();
     }
 
 
-    public function detail($id)
-    {
-        $data = $this->getLetterByDecryptedId($id);
-        $this->attachAcademicAdvisorInfo($data);
+    // public function detail($id)
+    // {
+    //     $data = $this->getLetterByDecryptedId($id);
+    //     $this->attachAcademicAdvisorInfo($data);
 
-        return view('administrasi.surat_masih_kuliah.detail', compact('data'));
-    }
+    //     return view('administrasi.surat_masih_kuliah.detail', compact('data'));
+    // }
 
     public function preview($id)
     {
@@ -209,41 +209,41 @@ $data->save();
         $data = $this->getLetterByDecryptedId($id);
 
         $request->validate([
-            'name'                 => 'required|string|max:100',
-            'student_number'       => 'required|max:10',
-            'department'           => 'required|string|max:100',
-            'study_program'        => 'required|string|max:100',
+            'nama'                 => 'required|string|max:100',
+            'npm'                    => 'required|max:10',
+            'jurusan'              => 'required|string|max:100',
+            'prodi'                => 'required|string|max:100',
             'semester'             => 'required|max:20',
-            'academic_year'        => 'required|max:20',
-            'phone_number'         => 'required|max:15',
-            'address'              => 'required|string',
-            'purpose'              => 'required|string|max:255',
-            'parent_name'          => 'required|string|max:100',
-            'parent_nip'           => 'required|max:20',
-            'parent_grade'         => 'required|string|max:100',
-            'parent_job'           => 'required|string|max:100',
-            'parent_institution'   => 'required|string|max:100',
-            'parent_address'       => 'required|string',
-            'signature'            => 'required|string',
-            'academic_advisor'     => 'required|string|max:100',
-            'supporting_document'  => 'sometimes|file|mimes:pdf|max:2048',
-            'supporting_document2' => 'sometimes|file|mimes:pdf|max:2048',
+            'thn_akademik'        => 'required|max:20',
+            'no_hp'                => 'required|max:15',
+            'alamat'              => 'required|string',
+            'tujuan'              => 'required|string|max:255',
+            'nama_ortu'          => 'required|string|max:100',
+            'nip_ortu'           => 'required|max:20',
+            'pangkat_ortu'         => 'required|string|max:100',
+            'pekerjaan_ortu'           => 'required|string|max:100',
+            'instansi_ortu'   => 'required|string|max:100',
+            'alamat_ortu'       => 'required|string',
+            'validasi'            => 'required|string',
+            'dosen_pa'     => 'required|string|max:100',
+            'dokumen'  => 'sometimes|file|mimes:pdf|max:2048',
+            'dokumen2' => 'sometimes|file|mimes:pdf|max:2048',
         ]);
 
 
         $signaturePath = $data->signature;
-        $supportingDocumentPath = $data->supporting_document;
-        $supportingDocument2Path = $data->supporting_document2;
+        $supportingDocumentPath = $data->dokumen;
+        $supportingDocument2Path = $data->dokumen2;
 
         // Jika signature baru dikirim (base64)
-    if ($request->signature && Str::startsWith($request->signature, 'data:image')) {
+    if ($request->validasi && Str::startsWith($request->validasi, 'data:image')) {
         // Hapus file tanda tangan lama jika ada (optional)
         if ($signaturePath && \Storage::exists($signaturePath)) {
             \Storage::delete($signaturePath);
         }
 
         // Proses simpan tanda tangan baru dari base64
-        $imageData = $request->signature;
+        $imageData = $request->validasi;
         list($type, $imageData) = explode(';', $imageData);
         list(, $imageData) = explode(',', $imageData);
         $imageData = base64_decode($imageData);
@@ -256,34 +256,34 @@ $data->save();
     }
 
     // Update dokumen pendukung jika ada upload baru
-    if ($request->hasFile('supporting_document')) {
+    if ($request->hasFile('dokumen')) {
         // Hapus file lama jika ada (optional)
         if ($supportingDocumentPath && \Storage::exists($supportingDocumentPath)) {
             \Storage::delete($supportingDocumentPath);
         }
 
-        $file = $request->file('supporting_document');
+        $file = $request->file('dokumen');
         $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
         $supportingDocumentPath = $file->storeAs('public/supporting_documents', $filename);
     }
     
-    if ($request->hasFile('supporting_document2')) {
+    if ($request->hasFile('dokumen2')) {
         // Hapus file lama jika ada (optional)
         if ($supportingDocument2Path && \Storage::exists($supportingDocument2Path)) {
             \Storage::delete($supportingDocument2Path);
         }
 
-        $file = $request->file('supporting_document2');
+        $file = $request->file('dokumen2');
         $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
         $supportingDocument2Path = $file->storeAs('public/supporting_documents2', $filename);
     }
 
     $data->fill(array_merge(
-        $request->except(['signature', 'supporting_document', 'supporting_document2']),
+        $request->except(['validasi', 'dokumen', 'dokumen2']),
         [
-            'signature' => $signaturePath,
-            'supporting_document' => $supportingDocumentPath,
-            'supporting_document2' => $supportingDocument2Path,
+            'validasi' => $signaturePath,
+            'dokumen' => $supportingDocumentPath,
+            'dokumen2' => $supportingDocument2Path,
         ]
     ));
     $data->save();
@@ -302,12 +302,12 @@ $data->save();
         $generatedPDF->save($tempPath);
 
         // 2. Ambil dokumen pendukung 1
-        $supportingFile1 = $data->supporting_document;
+        $supportingFile1 = $data->dokumen;
         $relativePath1 = str_replace('public/', '', $supportingFile1);
         $supportingPath1 = storage_path('app/public/' . $relativePath1);
 
         // 3. Ambil dokumen pendukung 2
-        $supportingFile2 = $data->supporting_document2;
+        $supportingFile2 = $data->dokumen2;
         $relativePath2 = str_replace('public/', '', $supportingFile2);
         $supportingPath2 = storage_path('app/public/' . $relativePath2);
 
@@ -337,8 +337,8 @@ $data->save();
     private function getLetterByDecryptedId($id)
     {
         $decryptedId = Crypt::decrypt($id);
-        return StillStudyLetter::with([
-            'numberLetter',
+        return SuratMasih::with([
+            'letterNumber',
             'adminValidation',
             'advisorSignature',
             'headOfProgramSignature',
@@ -348,17 +348,17 @@ $data->save();
 
     private function attachAcademicAdvisorInfo(&$data)
     {
-        if (strlen($data->academic_advisor) === 36) {
+        if (strlen($data->dosen_pa) === 36) {
             $sdm = DB::table('pdrd.sdm')
-                ->where('id_sdm', $data->academic_advisor)
+                ->where('id_sdm', $data->dosen_pa)
                 ->select('nm_sdm', 'nip')
                 ->first();
 
-            $data->academic_advisor_name = $sdm->nm_sdm ?? '';
-            $data->academic_advisor_nip = $sdm->nip ?? null;
+            $data->dosen_pa_nama = $sdm->nm_sdm ?? '';
+            $data->dosen_pa_nip = $sdm->nip ?? null;
         } else {
-            $data->academic_advisor_name = null;
-            $data->academic_advisor_nip = null;
+            $data->dosen_pa_nama = null;
+            $data->dosen_pa_nip = null;
         }
     }
 

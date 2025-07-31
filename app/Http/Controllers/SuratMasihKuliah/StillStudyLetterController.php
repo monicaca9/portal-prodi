@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\SuratMasihKuliah;
 
 use App\Http\Controllers\Controller;
-use App\Models\SuratMasihKuliah\StillStudyLetter;
-use App\Models\SuratMasihKuliah\SignatureLetter;
+use App\Models\SuratMasihKuliah\SuratMasih;
+use App\Models\SuratMasihKuliah\ValidasiSurat;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -12,12 +12,12 @@ use Barryvdh\DomPDF\Facade\Pdf;
 class StillStudyLetterController extends Controller
 {
 
-    private function getLetterByShortCode($code)
+    private function getLetterByShortCode($kode)
     {
-        $signature = SignatureLetter::where('short_code', $code)->firstOrFail();
-        $letter = StillStudyLetter::with('numberLetter')->where('id', $signature->submission_id)->firstOrFail();
+        $signature = ValidasiSurat::where('short_code', $kode)->firstOrFail();
+        $letter = SuratMasih::with('letterNumber')->where('id', $signature->submission_id)->firstOrFail();
 
-        $letter->signature = $signature;
+        $letter->validasi = $signature;
 
         return $letter;
     }
@@ -25,37 +25,37 @@ class StillStudyLetterController extends Controller
 
     private function attachAcademicAdvisorInfo($data)
     {
-        if (strlen($data->academic_advisor) === 36) {
+        if (strlen($data->dosen_pa) === 36) {
             $sdm = DB::table('pdrd.sdm')
-                ->where('id_sdm', $data->academic_advisor)
+                ->where('id_sdm', $data->dosen_pa)
                 ->select('nm_sdm', 'nip')
                 ->first();
 
-            $data->academic_advisor_name = $sdm->nm_sdm ?? '';
-            $data->academic_advisor_nip = $sdm->nip ?? null;
+            $data->dosen_pa_nama = $sdm->nm_sdm ?? '';
+            $data->dosen_pa_nip = $sdm->nip ?? null;
         } else {
-            $data->academic_advisor_name = null;
-            $data->academic_advisor_nip = null;
+            $data->dosen_pa_nama = null;
+            $data->dosen_pa_nip = null;
         }
     }
 
 
-    public function preview($code)
+    public function preview($kode)
     {
-        $data = $this->getLetterByShortCode($code);
+        $data = $this->getLetterByShortCode($kode);
         $this->attachAcademicAdvisorInfo($data);
         return $this->generateSignature($data)->stream('surat_masih_kuliah.pdf');
     }
 
-    public function seeSignatureByShortCode($code)
+    public function seeSignatureByShortCode($kode)
     {
 
-        $data = $this->getLetterByShortCode($code);
+        $data = $this->getLetterByShortCode($kode);
         $this->attachAcademicAdvisorInfo($data);
 
-        $name = $data->signature->createdBySdm->nm_sdm ?? null;
-        $nip = $data->signature->createdBySdm->nip ?? null;
+        $nama = $data->validasi->createdBySdm->nm_sdm ?? null;
+        $nip = $data->validasi->createdBySdm->nip ?? null;
 
-        return view('administrasi.surat_masih_kuliah.still_study_letter_qr_result', compact('data', 'name', 'nip'));
+        return view('administrasi.surat_masih_kuliah.still_study_letter_qr_result', compact('data', 'nama', 'nip'));
     }
 }

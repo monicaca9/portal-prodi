@@ -79,7 +79,7 @@
             <tr>
                 <td style="width: 16%">Nomor</td>
                 <td>:
-                    {{ $data->letterNumber->number ?? '' }}/{{ $data->letterNumber->code ?? '' }}/{{ $data->letterNumber->year ?? '' }}
+                    {{ $data->letterNumber->nomor ?? '' }}/{{ $data->letterNumber->kode ?? '' }}/{{ $data->letterNumber->tahun ?? '' }}
                 </td>
             </tr>
             <tr>
@@ -104,19 +104,19 @@
         <table style="width: 100%; border-collapse: collapse">
             <tr>
                 <td style="width: 24%">Nama</td>
-                <td>: {{ $data->name }}</td>
+                <td>: {{ $data->nama }}</td>
             </tr>
             <tr>
                 <td>NPM</td>
-                <td>: {{ $data->student_number }}</td>
+                <td>: {{ $data->npm }}</td>
             </tr>
             <tr>
                 <td>Jurusan</td>
-                <td>: {{ $data->department }}</td>
+                <td>: {{ $data->jurusan }}</td>
             </tr>
             <tr>
                 <td>Program Studi</td>
-                <td>: {{ $data->study_program }}</td>
+                <td>: {{ $data->prodi }}</td>
             </tr>
             <tr>
                 <td>Semester</td>
@@ -124,16 +124,16 @@
             </tr>
             <tr>
                 <td>Tahun Akademik</td>
-                <td>: {{ $data->academic_year }}</td>
+                <td>: {{ $data->thn_akademik }}</td>
             </tr>
             <tr>
                 <td>Alamat</td>
-                <td>: {{ $data->address }}</td>
+                <td>: {{ $data->alamat }}</td>
             </tr>
         </table>
 
         <p>Dengan ini kami mengajukan permohonan pembuatan Surat Keterangan Aktif Kuliah untuk keperluan
-            {{ $data->purpose }}.</p>
+            {{ $data->tujuan }}.</p>
 
         <p>Sebagai bahan pertimbangan, bersama ini kami lampirkan:</p>
         <ol style="margin-left: 0; padding-left: 1.2em; text-align: left;">
@@ -150,7 +150,7 @@
             <div class="right-side">
                 <table style="width: 100%; text-align: left;">
                         <tr>
-                            <td>Bandar Lampung, {{ tglIndonesia($data->created_at) }}</td>
+                            <td>Bandar Lampung, {{ tglIndonesia($data->tgl_create) }}</td>
                         </tr>
                     <tr>
                         <td colspan="2">Ketua Jurusan,</td>
@@ -166,8 +166,8 @@
                     </tr>
                     <tr>
                         <td colspan="2">
-                            @if (!empty($data->signature->createdBySdm->nm_sdm))
-                                {{ $data->signature->createdBySdm->nm_sdm }}
+                            @if (!empty($data->validasi->createdBySdm->nm_sdm))
+                                {{ $data->validasi->createdBySdm->nm_sdm }}
                             @else
                                 Herlinawati, S.T., M.T.
                             @endif
@@ -175,8 +175,8 @@
                     </tr>
                     <tr>
                         <td colspan="2">
-                            @if (!empty($data->signature->createdBySdm->nip))
-                                {{ $data->signature->createdBySdm->nip }}
+                            @if (!empty($data->validasi->createdBySdm->nip))
+                                {{ $data->validasi->createdBySdm->nip }}
                             @else
                                 NIP. 197103141999032001
                             @endif

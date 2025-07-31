@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Administrasi\SuratAktifKuliah;
 
 use App\Http\Controllers\Controller;
-use App\Models\SuratAktifKuliah\StudentActiveLetter;
+use App\Models\SuratAktifKuliah\SuratAktif;
 use App\Models\Pdrd\PesertaDidik;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -21,15 +21,15 @@ class StudentActiveLetterController extends Controller
     // $pesertaDidik = objek dari model PesertaDidik (namanya bebas dibuat sendiri ga harus $pesertaDidik yg penting tipe parameternya PesertaDidik)
     public function index(PesertaDidik $pesertaDidik)
     {
-        $studentActiveLetters = StudentActiveLetter::where('created_by', auth()->user()->id_pd_pengguna)
+        $studentActiveLetters = SuratAktif::where('id_creator', auth()->user()->id_pd_pengguna)
             // urutkan data dari yang terbaru
-            ->latest()
+            ->orderBy('id', 'desc')
             // ambil semua data yang cocok
             ->get();
         // Kalau pakai SQL:
         // SELECT * FROM student_active_letters
-        // WHERE created_by = 12345
-        // ORDER BY created_at DESC; NOTES: DESC = latest()
+        // WHERE id_creator = 12345
+        // ORDER BY tgl_create DESC; NOTES: DESC = latest()
 
         return view('administrasi.surat_aktif_kuliah.index', compact('studentActiveLetters'));
     }
@@ -39,14 +39,14 @@ class StudentActiveLetterController extends Controller
     public function history(Request $request, PesertaDidik $pesertaDidik)
     // Request $request → untuk mengambil data filter dari form pencarian (misalnya created_start, created_end, status)
     {
-        $query = StudentActiveLetter::where('created_by', auth()->user()->id_pd_pengguna);
+        $query = SuratAktif::where('id_creator', auth()->user()->id_pd_pengguna);
 
         if ($request->filled('created_start')) {
-            $query->whereDate('created_at', '>=', $request->created_start);
+            $query->whereDate('tgl_create', '>=', $request->created_start);
         }
 
         if ($request->filled('created_end')) {
-            $query->whereDate('created_at', '<=', $request->created_end);
+            $query->whereDate('tgl_create', '<=', $request->created_end);
         }
 
         if ($request->filled('status')) {
@@ -54,7 +54,7 @@ class StudentActiveLetterController extends Controller
         }
 
         // Setelah semua filter diterapkan, ambil data yang sudah difilter tadi, dan urutkan dari yang terbaru
-        $studentActiveLetters = $query->latest()->get();
+        $studentActiveLetters = $query->orderBy('id', 'desc')->get();
 
         return view('administrasi.surat_aktif_kuliah.history', compact('studentActiveLetters'));
     }
@@ -78,20 +78,20 @@ class StudentActiveLetterController extends Controller
         $semester = $this->calculateCurrentSemester($profile->tgl_masuk ?? now());
 
         // new StudentActiveLetter() = bikin object baru dari model surat.
-        $data = new StudentActiveLetter();
+        $data = new SuratAktif();
         $data->fill([
             'id'                => Str::uuid(),
-            'name'              => $profile->nm_pd,
-            'student_number'    => $profile->nim,
-            'department'        => $jurusan,       
-            'study_program'     => $profile->prodi,
+            'nama'              => $profile->nm_pd,
+            'npm'                => $profile->nim,
+            'jurusan'             => $jurusan,       
+            'prodi'              => $profile->prodi,
             'semester'          => $semester,
-            'academic_year'     => $academicYear,
-            'phone_number'      => $profile->tlpn_hp,
-            'address'           => $profile->jln,
-            'purpose'           => '',
-            'signature'         => '',
-            'academic_advisor'  => '',
+            'thn_akademik'     => $academicYear,
+            'no_hp'             => $profile->tlpn_hp,
+            'alamat'           => $profile->jln,
+            'tujuan'           => '',
+            'validasi'         => '',
+            'dosen_pa'          => '',
         ]);
 
         // Ambil ID mahasiswa dari $profile->id_pd.
@@ -109,18 +109,18 @@ class StudentActiveLetterController extends Controller
     {
         // Validasi isi form, untuk memastikan semua input tidak kosong dan sesuai
         $request->validate([
-            'name'                 => 'required|string|max:100',
-            'student_number'       => 'required|max:10',
-            'department'           => 'required|string|max:100',
-            'study_program'        => 'required|string|max:100',
+            'nama'                 => 'required|string|max:100',
+            'npm'                => 'required|max:10',
+            'jurusan'           => 'required|string|max:100',
+            'prodi'              => 'required|string|max:100',
             'semester'             => 'required|max:20',
-            'academic_year'        => 'required|max:20',
-            'phone_number'         => 'required|max:15',
-            'address'              => 'required|string',
-            'purpose'              => 'required|string|max:255',
-            'signature'            => 'required|string',
-            'academic_advisor'     => 'required|string|max:100',
-            'supporting_document'  => 'required|file|mimes:pdf|max:2048',
+            'thn_akademik'        => 'required|max:20',
+            'no_hp'             => 'required|max:15',
+            'alamat'              => 'required|string',
+            'tujuan'              => 'required|string|max:255',
+            'validasi'            => 'required|string',
+            'dosen_pa'          => 'required|string|max:100',
+            'dokumen'           => 'required|file|mimes:pdf|max:2048',
         ]);
 
         // untuk menyimpan lokasi file signature dan dokumen pendukung
@@ -129,9 +129,9 @@ class StudentActiveLetterController extends Controller
 
     // Mengecek apakah isi signature adalah gambar dalam bentuk base64 string
     // contoh base64: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
-    if ($request->signature && Str::startsWith($request->signature, 'data:image')) {
-        // Simpan isi signature ke variabel imageData
-        $imageData = $request->signature;
+    if ($request->validasi && Str::startsWith($request->validasi, 'data:image')) {
+        // Simpan isi validasi ke variabel imageData
+        $imageData = $request->validasi;
         // Pisahkan string menjadi 2 bagian, berdasarkan tanda ;
         // base64: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
         // $type = "data:image/png"
@@ -157,9 +157,9 @@ class StudentActiveLetterController extends Controller
 
     // Simpan supporting document
     // Mengecek apakah user mengirimkan file di form pada field supporting_document
-    if ($request->hasFile('supporting_document')) {
+    if ($request->hasFile('dokumen')) {
         // Ambil objek file-nya dan simpan ke variabel $file
-        $file = $request->file('supporting_document');
+        $file = $request->file('dokumen');
         // Buat nama file baru agar tidak bentrok dengan file lain
         // getClientOriginalExtension() → ambil ekstensi file (misalnya: pdf)
         $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
@@ -168,18 +168,18 @@ class StudentActiveLetterController extends Controller
     }
 
     // Buat objek model baru dari StudentActiveLetter
-    $data = new StudentActiveLetter();
+    $data = new SuratAktif();
     // Buat objek model baru dari StudentActiveLetter
     $data->fill(array_merge(
         // Ambil semua data dari form, kecuali:
         // signature → sudah diproses sebelumnya
         // supporting_document → sudah diproses jadi file
-        $request->except(['signature', 'supporting_document']),
+        $request->except(['validasi', 'dokumen']),
         [
             // Ditambah data custom:
             'id' => Str::uuid(),
-            'signature' => $signaturePath,
-            'supporting_document' => $supportingDocumentPath,
+            'validasi' => $signaturePath,
+            'dokumen' => $supportingDocumentPath,
         ]
     ));
     $data->save();
@@ -234,36 +234,36 @@ class StudentActiveLetterController extends Controller
 
     // Validasi semua data input, pastikan semua wajib diisi dan formatnya benar
     $request->validate([
-        'name'                 => 'required|string|max:100',
-        'student_number'       => 'required|max:10',
-        'department'           => 'required|string|max:100',
-        'study_program'        => 'required|string|max:100',
+        'nama'                 => 'required|string|max:100',
+        'npm'       => 'required|max:10',
+        'jurusan'           => 'required|string|max:100',
+        'prodi'        => 'required|string|max:100',
         'semester'             => 'required|max:20',
-        'academic_year'        => 'required|max:20',
-        'phone_number'         => 'required|max:15',
-        'address'              => 'required|string',
-        'purpose'              => 'required|string|max:255',
-        'signature'            => 'required|string',  
-        'academic_advisor'     => 'required|string|max:100',
-        'supporting_document'  => 'sometimes|file|mimes:pdf|max:2048',  
+        'thn_akademik'        => 'required|max:20',
+        'no_hp'         => 'required|max:15',
+        'alamat'              => 'required|string',
+        'tujuan'              => 'required|string|max:255',
+        'validasi'            => 'required|string',  
+        'dosen_pa'     => 'required|string|max:100',
+        'dokumen'  => 'sometimes|file|mimes:pdf|max:2048',  
     ]);
 
     // Simpan path file lama dulu
     // nanti dipakai untuk:
     // Menghapus file lama (kalau ada update)
     // Atau menyimpan ulang (kalau tidak berubah)
-    $signaturePath = $data->signature; 
-    $supportingDocumentPath = $data->supporting_document;
+    $signaturePath = $data->validasi; 
+    $supportingDocumentPath = $data->dokumen;
 
     // Jika signature baru dikirim (base64)
-    if ($request->signature && Str::startsWith($request->signature, 'data:image')) {
+    if ($request->validasi && Str::startsWith($request->validasi, 'data:image')) {
         // Hapus file tanda tangan lama jika ada (optional),  supaya tidak numpuk di server
         if ($signaturePath && \Storage::exists($signaturePath)) {
             \Storage::delete($signaturePath);
         }
 
         // Proses simpan tanda tangan baru dari base64
-        $imageData = $request->signature;
+        $imageData = $request->validasi;
         list($type, $imageData) = explode(';', $imageData);
         list(, $imageData) = explode(',', $imageData);
         $imageData = base64_decode($imageData);
@@ -276,22 +276,22 @@ class StudentActiveLetterController extends Controller
     }
 
     // Update dokumen pendukung jika ada upload baru
-    if ($request->hasFile('supporting_document')) {
+    if ($request->hasFile('dokumen')) {
         // Hapus file lama jika ada (optional)
         if ($supportingDocumentPath && \Storage::exists($supportingDocumentPath)) {
             \Storage::delete($supportingDocumentPath);
         }
 
-        $file = $request->file('supporting_document');
+        $file = $request->file('dokumen');
         $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
         $supportingDocumentPath = $file->storeAs('public/supporting_documents', $filename);
     }
 
     $data->fill(array_merge(
-        $request->except(['signature', 'supporting_document']),
+        $request->except(['validasi', 'dokumen']),
         [
-            'signature' => $signaturePath,
-            'supporting_document' => $supportingDocumentPath,
+            'validasi' => $signaturePath,
+            'dokumen' => $supportingDocumentPath,
         ]
     ));
     $data->save();
@@ -312,7 +312,7 @@ class StudentActiveLetterController extends Controller
         $tempPath = storage_path('app/temp_surat.pdf');
         $generatedPDF->save($tempPath);
 
-        $supportingFile = $data->supporting_document;
+        $supportingFile = $data->dokumen;
         // Ubah path supaya bisa diakses dari storage_path()
         // Laravel simpan file di: storage/app/public/supporting_documents/krs.pdf
         // Tapi path di DB cuma public/... → makanya diubah biar cocok sama folder storage.
@@ -350,7 +350,7 @@ class StudentActiveLetterController extends Controller
         // $decryptedId = "fb65e7a2-a0b1-4d2b-9f77-d7f14eaa6543" // hasil decrypt
         $decryptedId = Crypt::decrypt($id);
         // Ambil data surat beserta data terkait lainnya
-        return StudentActiveLetter::with([
+        return SuratAktif::with([
             'letterNumber',
             'adminValidation',
             'advisorSignature',
@@ -366,21 +366,21 @@ class StudentActiveLetterController extends Controller
     private function attachAcademicAdvisorInfo(&$data)
     {
         // Cek apakah isian academic_advisor adalah UUID. UUID biasanya panjangnya 36 karakter
-        if (strlen($data->academic_advisor) === 36) {
+        if (strlen($data->dosen_pa) === 36) {
             // Akses tabel sdm dari database pdrd untuk mencari informasi dosen berdasarkan ID.
             $sdm = DB::table('pdrd.sdm')
-                ->where('id_sdm', $data->academic_advisor)
+                ->where('id_sdm', $data->dosen_pa)
                 // Ambil hanya nama (nm_sdm) dan NIP dosen dari database
                 ->select('nm_sdm', 'nip')
                 ->first();
 
             // Masukkan informasi dosen ke dalam objek $data
-            $data->academic_advisor_name = $sdm->nm_sdm ?? '';
-            $data->academic_advisor_nip = $sdm->nip ?? null;
+            $data->dosen_pa_nama = $sdm->nm_sdm ?? '';
+            $data->dosen_pa_nip = $sdm->nip ?? null;
         } else {
-            // Kalau ternyata nilai academic_advisor bukan UUID (panjang ≠ 36), artinya bukan dosen valid. Maka isi nama dan NIP jadi null
-            $data->academic_advisor_name = null;
-            $data->academic_advisor_nip = null;
+            // Kalau ternyata nilai dosen_pa bukan UUID (panjang ≠ 36), artinya bukan dosen valid. Maka isi nama dan NIP jadi null
+            $data->dosen_pa_nama = null;
+            $data->dosen_pa_nip = null;
         }
     }
 

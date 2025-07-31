@@ -63,7 +63,7 @@
             <table style="margin-top: 20px; text-align: left;">
                 <tr>
                     <td>Nomor Surat</td>
-                    <td><span class="label">:</span> {{ $data->letterNumber->number ?? '' }}/{{ $data->letterNumber->code ?? '' }}/{{ $data->letterNumber->year ?? '' }}</td>
+                    <td><span class="label">:</span> {{ $data->letterNumber->nomor ?? '' }}/{{ $data->letterNumber->kode ?? '' }}/{{ $data->letterNumber->tahun ?? '' }}</td>
                 </tr>
                 <tr>
                     <td>Perihal Surat</td>
@@ -71,25 +71,25 @@
                 </tr>
                 {{-- <tr>
                     <td>Tanggal Surat</td>
-                    <td><span class="label">:</span> {{ \Carbon\Carbon::parse($data->created_at)->translatedFormat('d F Y') }}</td>
+                    <td><span class="label">:</span> {{ \Carbon\Carbon::parse($data->tgl_create)->translatedFormat('d F Y') }}</td>
                 </tr> --}}
                 <tr><td colspan="2"></td></tr>
                 <tr><td colspan="2">Yang Mengajukan</td></tr>
                 <tr>
                     <td>Nama</td>
-                    <td><span class="label">:</span> {{ $data->name }}</td>
+                    <td><span class="label">:</span> {{ $data->nama }}</td>
                 </tr>
                 <tr>
                     <td>NPM</td>
-                    <td><span class="label">:</span> {{ $data->student_number }}</td>
+                    <td><span class="label">:</span> {{ $data->npm }}</td>
                 </tr>
                 <tr>
                     <td>Jurusan</td>
-                    <td><span class="label">:</span> {{ $data->department }}</td>
+                    <td><span class="label">:</span> {{ $data->jurusan }}</td>
                 </tr>
                 <tr>
                     <td>Program Studi</td>
-                    <td><span class="label">:</span> {{ $data->study_program }}</td>
+                    <td><span class="label">:</span> {{ $data->prodi }}</td>
                 </tr>
                 <tr>
                     <td>Semester</td>
@@ -99,7 +99,7 @@
                 <tr><td colspan="2">Yang Menyetujui</td></tr>
                 <tr>
                     <td>Nama</td>
-                    <td><span class="label">:</span> {{ $name ?? '' }}</td>
+                    <td><span class="label">:</span> {{ $nama ?? '' }}</td>
                 </tr>
                 <tr>
                     <td>NIP</td>

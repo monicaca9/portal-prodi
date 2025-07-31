@@ -3,16 +3,16 @@
 @section('content')
     @php
         $showContentHeader = false;
-        $numberLetterExists = isset($numberLetter);
-        $hasAdminValidation = !empty($data->admin_validation_id);
+        $letterNumberExists = isset($letterNumber);
+        $hasAdminValidation = !empty($data->id_validasi_admin);
         $userRole = session()->get('login.peran.id_peran');
 
     $role = session()->get('login.peran.id_peran');
     $isDisabled = match ($role) {
-        6 => !empty($data->admin_validation_id),
-        46 => !empty($data->advisor_signature_id),
-        3000 => !empty($data->head_of_program_signature_id),
-        3001 => !empty($data->head_of_department_signature_id),
+        6 => !empty($data->id_validasi_admin),
+        46 => !empty($data->id_validasi_pa),
+        3000 => !empty($data->id_validasi_kaprodi),
+        3001 => !empty($data->id_validasi_kajur),
         default => true,
     };
 
@@ -42,23 +42,23 @@
         <tbody>
             <tr>
                 <th style="width: 30%;">Nama Lengkap</th>
-                <td>{{ $data->name }}</td>
+                <td>{{ $data->nama }}</td>
             </tr>
             <tr>
                 <th>NPM</th>
-                <td>{{ $data->student_number }}</td>
+                <td>{{ $data->npm }}</td>
             </tr>
             <tr>
                 <th>Jurusan</th>
-                <td>{{ $data->department }}</td>
+                <td>{{ $data->jurusan }}</td>
             </tr>
             <tr>
                 <th>Program Studi</th>
-                <td>{{ $data->study_program }}</td>
+                <td>{{ $data->prodi }}</td>
             </tr>
             <tr>
                 <th>Tahun Akademik</th>
-                <td>{{ $data->academic_year }}</td>
+                <td>{{ $data->thn_akademik }}</td>
             </tr>
             <tr>
                 <th>Semester</th>
@@ -66,35 +66,35 @@
             </tr>
             <tr>
                 <th>Nomor Whatsapp</th>
-                <td>{{ $data->phone_number }}</td>
+                <td>{{ $data->no_hp }}</td>
             </tr>
             <tr>
                 <th>Alamat</th>
-                <td>{{ $data->address }}</td>
+                <td>{{ $data->alamat }}</td>
             </tr>
             <tr>
                 <th>Keperluan</th>
-                <td>{{ $data->purpose }}</td>
+                <td>{{ $data->tujuan }}</td>
             </tr>
             <tr>
                 <th>Nama Wali</th>
-                <td>{{ $data->parent_name }}</td>
+                <td>{{ $data->nama_ortu }}</td>
             </tr>
             <tr>
                 <th>NIP</th>
-                <td>{{ $data->parent_nip }}</td>
+                <td>{{ $data->nip_ortu }}</td>
             </tr>
             <tr>
                 <th>Pangkat/Gol.</th>
-                <td>{{ $data->parent_grade }}</td>
+                <td>{{ $data->pangkat_ortu }}</td>
             </tr>
             <tr>
                 <th>Instansi/Tempat Kerja</th>
-                <td>{{ $data->parent_institution }}</td>
+                <td>{{ $data->instansi_ortu }}</td>
             </tr>
             <tr>
                 <th>Alamat Wali</th>
-                <td>{{ $data->parent_address }}</td>
+                <td>{{ $data->alamat_ortu }}</td>
             </tr>
             <tr>
                 <th>Lihat Surat</th>
@@ -130,11 +130,11 @@
 
 <td>
     <div class="mb-2">
-        <label for="notes" class="d-block"><strong>Komentar</strong></label>
-        <textarea name="notes" id="notes" class="form-control form-control-sm mt-1 @error('notes') is-invalid @enderror" rows="3"
-    placeholder="Tulis komentar di sini..." {{ $isDisabled ? 'disabled' : '' }}>{{ old('notes') }}</textarea>
+        <label for="komentar" class="d-block"><strong>Komentar</strong></label>
+        <textarea name="komentar" id="komentar" class="form-control form-control-sm mt-1 @error('komentar') is-invalid @enderror" rows="3"
+    placeholder="Tulis komentar di sini..." {{ $isDisabled ? 'disabled' : '' }}>{{ old('komentar') }}</textarea>
 
-@error('notes')
+@error('komentar')
     <div class="invalid-feedback d-block">{{ $message }}</div>
 @enderror
 
@@ -158,14 +158,14 @@
                     @endif
 
                     <div class="form-group row">
-                        <label for="letter_number" class="col-sm-3 col-form-label">Nomor Urut Surat</label>
+                        <label for="no_surat" class="col-sm-3 col-form-label">Nomor Urut Surat</label>
                         <div class="col-sm-9">
-                            <input type="text" name="letter_number[number]" id="letter_number" class="form-control"
-                                value="{{ old('letter_number.number', $nextNumber) }}"
-                                {{ isset($data->numberLetter) || $hasAdminValidation ? 'disabled' : '' }}>
-                            @if (isset($data->numberLetter))
-                                <input type="hidden" name="letter_number[number]"
-                                    value="{{ $data->numberLetter->number }}">
+                            <input type="text" name="no_surat[nomor]" id="no_surat" class="form-control"
+                                value="{{ old('no_surat.nomor', $nextNumber) }}"
+                                {{ isset($data->letterNumber) || $hasAdminValidation ? 'disabled' : '' }}>
+                            @if (isset($data->letterNumber))
+                                <input type="hidden" name="no_surat[nomor]"
+                                    value="{{ $data->letterNumber->nomor }}">
                             @endif
                         </div>
                     </div>
@@ -175,7 +175,7 @@
                         <div class="col-sm-9">
                             <input type="text" id="document_code" class="form-control"
                                 value="{{ $code }}/{{ $year }}" disabled>
-                            <input type="hidden" name="letter_number[code]" value="{{ $code }}">
+                            <input type="hidden" name="no_surat[kode]" value="{{ $code }}">
                         </div>
                     </div>
                 </div>

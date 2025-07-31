@@ -77,12 +77,12 @@
                         @forelse($stillStudyLetters as $no => $letter)
                             <tr>
                                 <td>{{ $no + 1 }}</td>
-                                <td>{{ $letter->name }}</td>
+                                <td>{{ $letter->nama }}</td>
                                 <td>Surat Masih Kuliah</td>
-                                <td>{{ isset($letter->created_at) ? tglIndonesia($letter->created_at) : '-' }}</td>
+                                <td>{{ isset($letter->tgl_create) ? tglIndonesia($letter->tgl_create) : '-' }}</td>
                             <td>
                                 @if (strtolower($letter->status) === 'selesai')
-                                    {{ tglIndonesia($letter->updated_at) }}
+                                    {{ tglIndonesia($letter->last_updated) }}
                                 @else
                                     -
                                 @endif
@@ -95,8 +95,8 @@
                                         $letter->headOfProgramSignature,
                                         $letter->headOfDepartmentSignature,
                                     ])
-                                        ->filter(function ($signature) {
-                                            return $signature && $signature->status === 'ditolak';
+                                        ->filter(function ($validasi) {
+                                            return $validasi && $validasi->status === 'ditolak';
                                         })
                                         ->pluck('notes')
                                         ->filter()
