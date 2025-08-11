@@ -20,7 +20,7 @@ class StillStudyLetterController extends Controller
     public function index(PesertaDidik $pesertaDidik)
     {
         $stillStudyLetters = SuratMasih::where('id_creator', auth()->user()->id_pd_pengguna)
-            ->orderBy('id', 'desc')
+            ->orderBy('tgl_create', 'desc')
             ->get();
         return view('administrasi.surat_masih_kuliah.index', compact('stillStudyLetters'));
     }
@@ -42,7 +42,7 @@ class StillStudyLetterController extends Controller
             $query->where('status', $request->status);
         }
 
-        $stillStudyLetters = $query->orderBy('id', 'desc')->get();
+        $stillStudyLetters = $query->orderBy('tgl_create', 'desc')->get();
 
         return view('administrasi.surat_masih_kuliah.history', compact('stillStudyLetters'));
     }
@@ -84,10 +84,8 @@ class StillStudyLetterController extends Controller
         $studentId = $profile->id_pd ?? null;
         
         $academicAdvisors = $this->getAcademicAdvisors($studentId);
-        $semesters = []; 
-        $currentAcademicYear = $this->getCurrentAcademicYear();
 
-        return view('administrasi.surat_masih_kuliah.create', compact('profile', 'data', 'academicAdvisors', 'semesters', 'academicYear'));
+        return view('administrasi.surat_masih_kuliah.create', compact('profile', 'data', 'academicAdvisors', 'academicYear'));
     }
 
     public function store(Request $request)
@@ -231,7 +229,7 @@ $data->save();
         ]);
 
 
-        $signaturePath = $data->signature;
+        $signaturePath = $data->validasi;
         $supportingDocumentPath = $data->dokumen;
         $supportingDocument2Path = $data->dokumen2;
 

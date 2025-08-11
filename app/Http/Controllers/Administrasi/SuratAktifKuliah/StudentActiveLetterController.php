@@ -23,7 +23,7 @@ class StudentActiveLetterController extends Controller
     {
         $studentActiveLetters = SuratAktif::where('id_creator', auth()->user()->id_pd_pengguna)
             // urutkan data dari yang terbaru
-            ->orderBy('id', 'desc')
+            ->orderBy('tgl_create', 'desc')
             // ambil semua data yang cocok
             ->get();
         // Kalau pakai SQL:
@@ -54,7 +54,7 @@ class StudentActiveLetterController extends Controller
         }
 
         // Setelah semua filter diterapkan, ambil data yang sudah difilter tadi, dan urutkan dari yang terbaru
-        $studentActiveLetters = $query->orderBy('id', 'desc')->get();
+        $studentActiveLetters = $query->orderBy('tgl_create', 'desc')->get();
 
         return view('administrasi.surat_aktif_kuliah.history', compact('studentActiveLetters'));
     }
@@ -70,6 +70,9 @@ class StudentActiveLetterController extends Controller
         ->value('nm_lemb');
         // Ambil nama jurusan dari tabel `pdrd.sms` berdasarkan `id_sms` tertentu (hardcoded)
 
+        // $this = object dari class yang lagi dipakai sekarang.
+        // Kalau kamu tulis $this->getCurrentAcademicYear() artinya:
+        // "Panggil method getCurrentAcademicYear() yang ada di object ini."
         $academicYear = $this->getCurrentAcademicYear();
 
         // Ambil tanggal masuk kuliah dari $profile->tgl_masuk.

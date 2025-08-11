@@ -79,7 +79,7 @@
                                 <td>{{ isset($letter->tgl_create) ? tglIndonesia($letter->tgl_create) : '-' }}</td>
                             <td>
                                 @if (strtolower($letter->status) === 'selesai')
-                                    {{ tglIndonesia($letter->last_updated) }}
+                                    {{ tglIndonesia($letter->last_update) }}
                                 @else
                                     -
                                 @endif

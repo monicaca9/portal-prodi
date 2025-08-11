@@ -51,7 +51,7 @@ class StillStudyLetterController extends Controller
             $query->where('status', '!=', 'dibuat');
         }
 
-        $stillStudyLetters = $query->orderBy('id', 'desc')->get();
+        $stillStudyLetters = $query->orderBy('tgl_create', 'desc')->get();
 
         foreach ($stillStudyLetters as $letter) {
             $disable = match ($userRole) {

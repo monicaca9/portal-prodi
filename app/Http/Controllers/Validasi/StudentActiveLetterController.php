@@ -59,7 +59,7 @@ class StudentActiveLetterController extends Controller
 
         // Ambil semua data surat aktif kuliah dari database, yang paling baru ditampilkan duluan
         // dan simpan ke variabel bernama $studentActiveLetters
-        $studentActiveLetters = $query->orderBy('id', 'desc')->get();
+        $studentActiveLetters = $query->orderBy('tgl_create', 'desc')->get();
 
         // Ambil surat satu per satu dari daftar $studentActiveLetters dan masing2 surat simpan di $letter
         foreach ($studentActiveLetters as $letter) {
